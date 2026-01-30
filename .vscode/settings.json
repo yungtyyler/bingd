@@ -20,6 +20,9 @@
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  },
 
   // --- Tailwind CSS ---
   "tailwindCSS.experimental.classRegex": [
