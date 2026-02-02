@@ -1,13 +1,7 @@
+import { searchShows } from "@/actions/shows";
+import AddShowButton from "@/components/AddShowButton";
 import Searchbar from "@/components/Searchbar";
 import { ensureDbUser } from "@/lib/ensure-user";
-
-type TVMazeSearchItem = {
-  show: {
-    tvmazeId: number;
-    name: string;
-    image: { medium?: string; original?: string } | null;
-  };
-};
 
 const SearchPage = async ({
   searchParams,
@@ -18,7 +12,7 @@ const SearchPage = async ({
   const { q } = await searchParams;
   const query = (q ?? "").trim();
 
-  const results = query.length >= 2 ? await fetchShows(query) : [];
+  const results = query.length >= 2 ? await searchShows(query) : [];
 
   return (
     <main className="p-6 space-y-6">
@@ -47,11 +41,7 @@ const SearchPage = async ({
                 <div className="w-full aspect-2/3 rounded-md bg-black/10 mb-2" />
               )}
               <div className="font-medium">{r.name}</div>
-
-              {/* Phase 1: Add button comes later (server action) */}
-              <form action="/app/search" className="mt-2">
-                <input type="hidden" name="q" value={query} />
-              </form>
+              <AddShowButton show={r} />
             </li>
           ))}
         </ul>
@@ -59,26 +49,5 @@ const SearchPage = async ({
     </main>
   );
 };
-
-async function fetchShows(query: string) {
-  const res = await fetch(
-    `https://api.tvmaze.com/search/shows?q=${encodeURIComponent(query)}`,
-    { cache: "no-store" },
-  );
-
-  if (!res.ok) {
-    throw new Error("There was an issue fetching shows.");
-  }
-
-  const data = (await res.json()) as TVMazeSearchItem[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return data.map((item: any) => {
-    return {
-      tvmazeId: item.show.id,
-      name: item.show.name,
-      imageUrl: item.show.image?.medium ?? item.show.image?.original ?? null,
-    };
-  });
-}
 
 export default SearchPage;
