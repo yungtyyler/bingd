@@ -2,11 +2,11 @@
 
 import { ensureDbUser } from "@/lib/ensure-user";
 import prisma from "@/lib/prisma";
-import { TVMazeSearchItem } from "@/types";
+import { ShowSnippet, TVMazeSearchItem } from "@/types";
 import { revalidatePath } from "next/cache";
-import { WatchStatus } from "@/app/generated/prisma/client";
+import { WatchStatus } from "@/app/generated/prisma/enums";
 
-export async function searchShows(query: string) {
+export async function searchShows(query: string): Promise<ShowSnippet[]> {
   if (!query) return [];
 
   const res = await fetch(
@@ -19,50 +19,63 @@ export async function searchShows(query: string) {
   }
 
   const data = (await res.json()) as TVMazeSearchItem[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return data.map((item: any) => {
-    return {
-      tvmazeId: item.show.id,
-      name: item.show.name,
-      imageUrl: item.show.image?.medium ?? item.show.image?.original ?? null,
-    };
+  const dbUser = await ensureDbUser();
+  const tvmazeIds = data.map((item) => item.show.id);
+
+  const existingShows = await prisma.userShow.findMany({
+    where: {
+      userId: dbUser.id,
+      show: {
+        tvmazeId: { in: tvmazeIds },
+      },
+    },
+    include: { show: true },
   });
+
+  const libraryMap = new Map<number, WatchStatus>();
+
+  existingShows.forEach((record) => {
+    if (!record.show) return;
+
+    libraryMap.set(record.show.tvmazeId, record.status);
+  });
+
+  return data.map((item) => ({
+    tvmazeId: item.show.id,
+    name: item.show.name,
+    imageUrl: item.show.image?.medium ?? item.show.image?.original ?? null,
+    status: libraryMap.get(item.show.id),
+  }));
 }
 
-export async function addShow(params: {
-  tvmazeId: number;
-  name: string;
-  imageUrl?: string;
-  status?: WatchStatus;
-}) {
+export async function addShow(show: ShowSnippet) {
   const dbUser = await ensureDbUser();
 
-  // 1. Ensure the Show exists in our global table
-  const show = await prisma.show.upsert({
-    where: { tvmazeId: params.tvmazeId },
-    update: { name: params.name, imageUrl: params.imageUrl ?? null },
+  const dbShow = await prisma.show.upsert({
+    where: { tvmazeId: show.tvmazeId },
+    update: { name: show.name, imageUrl: show.imageUrl ?? null },
     create: {
-      tvmazeId: params.tvmazeId,
-      name: params.name,
-      imageUrl: params.imageUrl ?? null,
+      tvmazeId: show.tvmazeId,
+      name: show.name,
+      imageUrl: show.imageUrl ?? null,
     },
     select: { id: true },
   });
 
-  // 2. Link it to the User
+  const status = (show.status as WatchStatus) ?? WatchStatus.PLANNED;
+
   await prisma.userShow.upsert({
     where: {
       userId_showId: {
         userId: dbUser.id,
-        showId: show.id,
+        showId: dbShow.id,
       },
     },
-    // If it exists, we might want to just return, or update status if provided
-    update: params.status ? { status: params.status } : {},
+    update: { status },
     create: {
       userId: dbUser.id,
-      showId: show.id,
-      status: params.status ?? "PLANNED",
+      showId: dbShow.id,
+      status,
     },
   });
 
