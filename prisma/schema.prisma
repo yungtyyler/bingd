@@ -13,6 +13,13 @@ datasource db {
   provider = "postgresql"
 }
 
+enum WatchStatus {
+  PLANNED
+  WATCHING
+  COMPLETED
+  DROPPED
+}
+
 model User {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -29,7 +36,6 @@ model Show {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // TVMaze id (unique external reference for Phase 1)
   tvmazeId Int     @unique
   name     String
   imageUrl String?
@@ -42,13 +48,17 @@ model Show {
 model UserShow {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  showId String?
-  show   Show?   @relation(fields: [showId], references: [id], onDelete: Cascade)
+  showId String
+  show   Show?  @relation(fields: [showId], references: [id], onDelete: Cascade)
+
+  status WatchStatus @default(PLANNED)
 
   @@unique([userId, showId])
   @@index([userId])
+  @@index([status])
 }
