@@ -1,6 +1,6 @@
 "use client";
 
-import addShow from "@/actions/shows";
+import { addShow } from "@/actions/shows";
 
 const AddShowButton = ({
   show,

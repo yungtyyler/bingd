@@ -3,8 +3,12 @@
 import { ensureDbUser } from "@/lib/ensure-user";
 import prisma from "@/lib/prisma";
 import { TVMazeSearchItem } from "@/types";
+import { revalidatePath } from "next/cache";
+import { WatchStatus } from "@/app/generated/prisma/client";
 
 export async function searchShows(query: string) {
+  if (!query) return [];
+
   const res = await fetch(
     `https://api.tvmaze.com/search/shows?q=${encodeURIComponent(query)}`,
     { cache: "no-store" },
@@ -25,12 +29,15 @@ export async function searchShows(query: string) {
   });
 }
 
-export default async function addShow(params: {
+export async function addShow(params: {
   tvmazeId: number;
   name: string;
   imageUrl?: string;
+  status?: WatchStatus;
 }) {
   const dbUser = await ensureDbUser();
+
+  // 1. Ensure the Show exists in our global table
   const show = await prisma.show.upsert({
     where: { tvmazeId: params.tvmazeId },
     update: { name: params.name, imageUrl: params.imageUrl ?? null },
@@ -42,15 +49,40 @@ export default async function addShow(params: {
     select: { id: true },
   });
 
-  await prisma.userShow
-    .upsert({
-      where: { userId_showId: { userId: dbUser.id, showId: show.id } },
-      update: {},
-      create: { userId: dbUser.id, showId: show.id },
-    })
-    .catch((error) => {
-      throw new Error(error);
-    });
+  // 2. Link it to the User
+  await prisma.userShow.upsert({
+    where: {
+      userId_showId: {
+        userId: dbUser.id,
+        showId: show.id,
+      },
+    },
+    // If it exists, we might want to just return, or update status if provided
+    update: params.status ? { status: params.status } : {},
+    create: {
+      userId: dbUser.id,
+      showId: show.id,
+      status: params.status ?? "PLANNED",
+    },
+  });
 
+  revalidatePath("/library");
+  return true;
+}
+
+export async function updateShowStatus(showId: string, status: WatchStatus) {
+  const dbUser = await ensureDbUser();
+
+  await prisma.userShow.update({
+    where: {
+      userId_showId: {
+        userId: dbUser.id,
+        showId: showId,
+      },
+    },
+    data: { status },
+  });
+
+  revalidatePath("/library");
   return true;
 }
