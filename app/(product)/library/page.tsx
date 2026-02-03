@@ -1,3 +1,4 @@
+import StatusSelect from "@/components/StatusSelect";
 import { ensureDbUser } from "@/lib/ensure-user";
 import prisma from "@/lib/prisma";
 import Image from "next/image";
@@ -53,9 +54,10 @@ const LibraryPage = async () => {
 
               <h3 className="font-semibold truncate">{entry.show?.name}</h3>
 
-              <div className="text-xs uppercase tracking-wider font-bold text-gray-500">
-                {entry.status}
-              </div>
+              <StatusSelect
+                showId={entry.showId}
+                initialStatus={entry.status}
+              />
             </div>
           ))}
         </div>
