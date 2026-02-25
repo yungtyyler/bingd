@@ -2,6 +2,7 @@
 
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 const ProductHeader = () => {
@@ -12,9 +13,17 @@ const ProductHeader = () => {
     <header className="border-b bg-white">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo / Brand */}
-        <Link href="/dashboard" className="font-bold text-xl tracking-tight">
-          Bingd
-        </Link>
+        <div className="max-w-15 bg-white rounded-full p-1">
+          <Link href="/">
+            <Image
+              width={750}
+              height={750}
+              className="object-contain rounded-full"
+              src="/bingd_logo.png"
+              alt="Bingd Logo"
+            />
+          </Link>
+        </div>
 
         {/* Navigation */}
         <nav className="flex items-center gap-6 text-sm font-medium">

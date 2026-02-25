@@ -10,7 +10,7 @@ const LibraryPage = async () => {
   const shows = await prisma.userShow.findMany({
     where: { userId: dbUser.id },
     include: { show: true },
-    orderBy: { updatedAt: "desc" },
+    orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
   });
 
   return (
