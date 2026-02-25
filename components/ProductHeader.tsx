@@ -28,6 +28,16 @@ const ProductHeader = () => {
         {/* Navigation */}
         <nav className="flex items-center gap-6 text-sm font-medium">
           <Link
+            href="/dashboard"
+            className={
+              isActive("/dashboard")
+                ? "text-black"
+                : "text-gray-500 hover:text-black"
+            }
+          >
+            Dashboard
+          </Link>
+          <Link
             href="/library"
             className={
               isActive("/library")

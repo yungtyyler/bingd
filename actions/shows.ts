@@ -6,6 +6,40 @@ import { ShowSnippet, TVMazeSearchItem } from "@/types";
 import { revalidatePath } from "next/cache";
 import { WatchStatus } from "@/app/generated/prisma/enums";
 
+export async function getDashboardShows(userId: string) {
+  if (!userId) return [];
+
+  const userShows = await prisma.userShow.findMany({
+    where: {
+      userId: userId,
+      status: "WATCHING",
+    },
+    include: { show: true },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  const detailedShows = await Promise.all(
+    userShows.map(async (show) => {
+      try {
+        const res = await fetch(
+          `https://api.tvmaze.com/shows/${show.show?.tvmazeId}`,
+          { next: { revalidate: 3600 } },
+        );
+
+        if (!res.ok) return { ...show, tvmazeData: null };
+        const tvmazeData = await res.json();
+
+        return { ...show, tvmazeData: tvmazeData };
+      } catch (err) {
+        console.log(err);
+        return { ...show, tvmazeData: null };
+      }
+    }),
+  );
+
+  return detailedShows;
+}
+
 export async function searchShows(query: string): Promise<ShowSnippet[]> {
   if (!query) return [];
 
