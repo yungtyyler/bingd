@@ -42,54 +42,57 @@ const DashboardPage = async () => {
                 show.tvmazeData?.webChannel?.name;
 
               return (
-                <div
+                <Link
                   key={show.id}
-                  className="flex gap-4 p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow"
+                  href={`/shows/${show.show?.tvmazeId}`}
+                  className="group cursor-pointer"
                 >
-                  {/* Thumbnail */}
-                  <div className="w-24 h-36 shrink-0 bg-gray-100 rounded-lg overflow-hidden relative">
-                    {show.show?.imageUrl ? (
-                      <Image
-                        width={96}
-                        height={144}
-                        src={show.show?.imageUrl ?? ""}
-                        alt={show.show?.name ?? ""}
-                        className="object-cover w-full h-full"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
-                        No Image
+                  <div className="flex gap-4 p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
+                    {/* Thumbnail */}
+                    <div className="w-24 h-36 shrink-0 bg-gray-100 rounded-lg overflow-hidden relative">
+                      {show.show?.imageUrl ? (
+                        <Image
+                          width={96}
+                          height={144}
+                          src={show.show?.imageUrl ?? ""}
+                          alt={show.show?.name ?? ""}
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                          No Image
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Details */}
+                    <div className="flex flex-col flex-1 py-1">
+                      <h3 className="font-bold text-lg leading-tight line-clamp-2 mb-1 text-black">
+                        {show.show?.name}
+                      </h3>
+
+                      {network && (
+                        <p className="text-xs text-gray-500 font-medium mb-3">
+                          {network}
+                        </p>
+                      )}
+
+                      <div className="mt-auto space-y-2">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                            isEnded
+                              ? "bg-red-50 text-red-700"
+                              : "bg-green-50 text-green-700"
+                          }`}
+                        >
+                          {apiStatus || "Unknown Status"}
+                        </span>
+
+                        {/* Add "Log Episode" button here later... */}
                       </div>
-                    )}
-                  </div>
-
-                  {/* Details */}
-                  <div className="flex flex-col flex-1 py-1">
-                    <h3 className="font-bold text-lg leading-tight line-clamp-2 mb-1 text-black">
-                      {show.show?.name}
-                    </h3>
-
-                    {network && (
-                      <p className="text-xs text-gray-500 font-medium mb-3">
-                        {network}
-                      </p>
-                    )}
-
-                    <div className="mt-auto space-y-2">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                          isEnded
-                            ? "bg-red-50 text-red-700"
-                            : "bg-green-50 text-green-700"
-                        }`}
-                      >
-                        {apiStatus || "Unknown Status"}
-                      </span>
-
-                      {/* Add "Log Episode" button here later... */}
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

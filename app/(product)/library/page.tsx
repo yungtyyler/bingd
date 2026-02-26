@@ -32,33 +32,36 @@ const LibraryPage = async () => {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
           {shows.map((entry) => (
-            <div
+            <Link
               key={entry.id}
-              className="border rounded-lg p-4 flex flex-col gap-2"
+              href={`/shows/${entry.show?.tvmazeId}`}
+              className="group cursor-pointer"
             >
-              <div className="relative aspect-2/3 w-full bg-gray-100 mb-2 rounded overflow-hidden">
-                {entry.show?.imageUrl ? (
-                  <Image
-                    src={entry.show.imageUrl}
-                    alt={entry.show.name}
-                    className="object-cover w-full h-full"
-                    width={200}
-                    height={400}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-gray-400">
-                    No Image
-                  </div>
-                )}
+              <div className="border rounded-lg p-4 flex flex-col gap-2">
+                <div className="relative aspect-2/3 w-full bg-gray-100 mb-2 rounded overflow-hidden">
+                  {entry.show?.imageUrl ? (
+                    <Image
+                      src={entry.show.imageUrl}
+                      alt={entry.show.name}
+                      className="object-cover w-full h-full"
+                      width={200}
+                      height={400}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400">
+                      No Image
+                    </div>
+                  )}
+                </div>
+
+                <h3 className="font-semibold truncate">{entry.show?.name}</h3>
+
+                <StatusSelect
+                  showId={entry.showId}
+                  initialStatus={entry.status}
+                />
               </div>
-
-              <h3 className="font-semibold truncate">{entry.show?.name}</h3>
-
-              <StatusSelect
-                showId={entry.showId}
-                initialStatus={entry.status}
-              />
-            </div>
+            </Link>
           ))}
         </div>
       )}

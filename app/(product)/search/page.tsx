@@ -2,6 +2,7 @@ import { searchShows } from "@/actions/shows";
 import AddShowButton from "@/components/AddShowButton";
 import Searchbar from "@/components/Searchbar";
 import { ensureDbUser } from "@/lib/ensure-user";
+import Link from "next/link";
 
 const SearchPage = async ({
   searchParams,
@@ -30,17 +31,22 @@ const SearchPage = async ({
         <ul className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {results.map((r) => (
             <li key={r.tvmazeId} className="rounded-lg border p-3">
-              {r.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={r.imageUrl}
-                  alt={r.name}
-                  className="w-full rounded-md mb-2"
-                />
-              ) : (
-                <div className="w-full aspect-2/3 rounded-md bg-black/10 mb-2" />
-              )}
-              <div className="font-medium">{r.name}</div>
+              <Link
+                href={`/shows/${r.tvmazeId}`}
+                className="group cursor-pointer"
+              >
+                {r.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={r.imageUrl}
+                    alt={r.name}
+                    className="w-full rounded-md mb-2"
+                  />
+                ) : (
+                  <div className="w-full aspect-2/3 rounded-md bg-black/10 mb-2" />
+                )}
+                <div className="font-medium">{r.name}</div>
+              </Link>
               <AddShowButton show={r} />
             </li>
           ))}
