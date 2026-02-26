@@ -3,6 +3,7 @@
 import { addShow } from "@/actions/shows";
 import { ShowSnippet } from "@/types";
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 
 const AddShowButton = ({ show }: { show: ShowSnippet }) => {
   const [isPending, startTransition] = useTransition();
@@ -15,6 +16,8 @@ const AddShowButton = ({ show }: { show: ShowSnippet }) => {
       try {
         await addShow(show);
         setIsSuccess(true);
+
+        toast.success(`${show.name} added to your library!`);
       } catch (error) {
         console.error("Failed to add show: ", error);
       }
