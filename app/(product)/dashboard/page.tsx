@@ -52,6 +52,7 @@ const DashboardPage = async () => {
                     <div className="w-24 h-36 shrink-0 bg-gray-100 rounded-lg overflow-hidden relative">
                       {show.show?.imageUrl ? (
                         <Image
+                          priority
                           width={96}
                           height={144}
                           src={show.show?.imageUrl ?? ""}

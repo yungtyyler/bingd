@@ -41,6 +41,7 @@ const LibraryPage = async () => {
                 <div className="relative aspect-2/3 w-full bg-gray-100 mb-2 rounded overflow-hidden">
                   {entry.show?.imageUrl ? (
                     <Image
+                      priority
                       src={entry.show.imageUrl}
                       alt={entry.show.name}
                       className="object-cover w-full h-full"

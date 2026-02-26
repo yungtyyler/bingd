@@ -3,8 +3,8 @@ import StatusSelect from "@/components/StatusSelect";
 import { ensureDbUser } from "@/lib/ensure-user";
 import prisma from "@/lib/prisma";
 import { ShowSnippet } from "@/types";
+import Image from "next/image";
 import { notFound } from "next/navigation";
-import React from "react";
 
 const ShowPage = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
@@ -54,8 +54,9 @@ const ShowPage = async ({ params }: { params: Promise<{ id: string }> }) => {
         <div className="w-full md:w-1/3 shrink-0 space-y-4">
           <div className="aspect-2/3 w-full bg-gray-100 rounded-xl overflow-hidden shadow-md">
             {tvmazeData.image?.original ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
+                width={600}
+                height={900}
                 src={tvmazeData.image.original}
                 alt={tvmazeData.name}
                 className="object-cover w-full h-full"

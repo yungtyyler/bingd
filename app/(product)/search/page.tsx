@@ -2,6 +2,7 @@ import { searchShows } from "@/actions/shows";
 import AddShowButton from "@/components/AddShowButton";
 import Searchbar from "@/components/Searchbar";
 import { ensureDbUser } from "@/lib/ensure-user";
+import Image from "next/image";
 import Link from "next/link";
 
 const SearchPage = async ({
@@ -36,8 +37,10 @@ const SearchPage = async ({
                 className="group cursor-pointer"
               >
                 {r.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
+                    priority
+                    width={200}
+                    height={400}
                     src={r.imageUrl}
                     alt={r.name}
                     className="w-full rounded-md mb-2"
