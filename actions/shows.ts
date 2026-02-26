@@ -133,3 +133,27 @@ export async function updateShowStatus(showId: string, status: WatchStatus) {
   revalidatePath("/library");
   return true;
 }
+
+export async function deleteShow(showId: string) {
+  const dbUser = await ensureDbUser();
+
+  try {
+    await prisma.userShow.delete({
+      where: {
+        userId_showId: {
+          userId: dbUser.id,
+          showId: showId,
+        },
+      },
+    });
+
+    revalidatePath("/library");
+    revalidatePath("/dashboard");
+    revalidatePath(`/shows/${showId}`);
+
+    return true;
+  } catch (err) {
+    console.error("Failed to remove show:", err);
+    throw new Error("Could not remove show from library.");
+  }
+}

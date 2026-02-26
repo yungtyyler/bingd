@@ -1,21 +1,36 @@
 import StatusSelect from "@/components/StatusSelect";
+import LibraryTabs from "@/components/LibraryTabs";
 import { ensureDbUser } from "@/lib/ensure-user";
 import prisma from "@/lib/prisma";
 import Image from "next/image";
 import Link from "next/link";
+import { WatchStatus } from "@/app/generated/prisma/enums";
 
-const LibraryPage = async () => {
+const LibraryPage = async ({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) => {
   const dbUser = await ensureDbUser();
+  const { status } = await searchParams;
+
+  const validStatuses = Object.values(WatchStatus);
+  const currentFilter = validStatuses.includes(status as WatchStatus)
+    ? (status as WatchStatus)
+    : undefined;
 
   const shows = await prisma.userShow.findMany({
-    where: { userId: dbUser.id },
+    where: {
+      userId: dbUser.id,
+      ...(currentFilter ? { status: currentFilter } : {}),
+    },
     include: { show: true },
     orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
   });
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <header className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">My Library</h1>
         <Link
           href="/search"
@@ -23,7 +38,9 @@ const LibraryPage = async () => {
         >
           + Add Show
         </Link>
-      </header>
+      </div>
+
+      <LibraryTabs currentFilter={currentFilter} />
 
       {shows.length === 0 ? (
         <p className="text-gray-500">

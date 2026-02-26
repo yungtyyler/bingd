@@ -1,4 +1,5 @@
 import AddShowButton from "@/components/AddShowButton";
+import DeleteShowButton from "@/components/DeleteShowButton";
 import StatusSelect from "@/components/StatusSelect";
 import { ensureDbUser } from "@/lib/ensure-user";
 import prisma from "@/lib/prisma";
@@ -74,10 +75,15 @@ const ShowPage = async ({ params }: { params: Promise<{ id: string }> }) => {
               Your Library
             </h3>
             {userShow ? (
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <StatusSelect
                   initialStatus={userShow.status}
                   showId={dbShow!.id}
+                />
+
+                <DeleteShowButton
+                  showId={dbShow!.id}
+                  showName={tvmazeData.name}
                 />
               </div>
             ) : (
