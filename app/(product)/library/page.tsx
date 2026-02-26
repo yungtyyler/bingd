@@ -1,5 +1,6 @@
 import StatusSelect from "@/components/StatusSelect";
 import LibraryTabs from "@/components/LibraryTabs";
+import LibrarySort from "@/components/LibrarySort";
 import { ensureDbUser } from "@/lib/ensure-user";
 import prisma from "@/lib/prisma";
 import Image from "next/image";
@@ -9,15 +10,22 @@ import { WatchStatus } from "@/app/generated/prisma/enums";
 const LibraryPage = async ({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; sort?: string }>;
 }) => {
   const dbUser = await ensureDbUser();
-  const { status } = await searchParams;
+  const { status, sort } = await searchParams;
 
   const validStatuses = Object.values(WatchStatus);
   const currentFilter = validStatuses.includes(status as WatchStatus)
     ? (status as WatchStatus)
     : undefined;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let orderByClause: any = [{ updatedAt: "desc" }];
+
+  if (sort === "alpha") {
+    orderByClause = [{ show: { name: "asc" } }];
+  }
 
   const shows = await prisma.userShow.findMany({
     where: {
@@ -25,7 +33,7 @@ const LibraryPage = async ({
       ...(currentFilter ? { status: currentFilter } : {}),
     },
     include: { show: true },
-    orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
+    orderBy: orderByClause,
   });
 
   return (
@@ -40,7 +48,10 @@ const LibraryPage = async ({
         </Link>
       </div>
 
-      <LibraryTabs currentFilter={currentFilter} />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 border-b pb-4">
+        <LibraryTabs currentFilter={currentFilter} />
+        <LibrarySort />
+      </div>
 
       {shows.length === 0 ? (
         <p className="text-gray-500">
