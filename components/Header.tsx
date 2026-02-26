@@ -1,18 +1,12 @@
-import {
-  SignedOut,
-  SignInButton,
-  SignUpButton,
-  SignedIn,
-  UserButton,
-} from "@clerk/nextjs";
+import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 
 const Header = () => {
   return (
-    <header className="flex justify-between items-center p-4 gap-4">
-      <div className="max-w-15 bg-white rounded-full p-1">
-        <Link href="/">
+    <header className="sticky top-0 z-50 border-b border-surface-border bg-surface-base/80 backdrop-blur-md py-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <Link href="/" className="max-w-15 bg-white rounded-full p-1">
           <Image
             width={750}
             height={750}
@@ -21,23 +15,20 @@ const Header = () => {
             alt="Bingd Logo"
           />
         </Link>
-      </div>
 
-      <div className="flex items-center gap-4">
-        <SignedOut>
-          <SignInButton>
-            <button className="cursor-pointer">Sign In</button>
+        <nav className="flex items-center gap-6">
+          <SignInButton mode="modal">
+            <button className="text-sm font-medium text-gray-400 hover:text-white transition-colors cursor-pointer">
+              Log in
+            </button>
           </SignInButton>
-          <SignUpButton>
-            <button className="bg-[#6c47ff] text-white rounded-full font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 cursor-pointer">
+
+          <SignUpButton mode="modal">
+            <button className="px-4 py-2 text-sm font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] cursor-pointer">
               Sign Up
             </button>
           </SignUpButton>
-        </SignedOut>
-        <SignedIn>
-          <Link href="/dashboard">Dashboard</Link>
-          <UserButton />
-        </SignedIn>
+        </nav>
       </div>
     </header>
   );

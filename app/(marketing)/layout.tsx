@@ -1,14 +1,11 @@
+import { ReactNode } from "react";
 import Header from "@/components/Header";
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-surface-base">
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8">{children}</main>
+      <main className="flex-1">{children}</main>
     </div>
   );
 }

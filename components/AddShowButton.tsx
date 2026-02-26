@@ -16,10 +16,9 @@ const AddShowButton = ({ show }: { show: ShowSnippet }) => {
       try {
         await addShow(show);
         setIsSuccess(true);
-
         toast.success(`${show.name} added to your library!`);
       } catch (error) {
-        console.error("Failed to add show: ", error);
+        toast.error("Failed to add show. Please try again. " + error);
       }
     });
   };
@@ -28,7 +27,7 @@ const AddShowButton = ({ show }: { show: ShowSnippet }) => {
     return (
       <button
         disabled
-        className="w-full px-4 py-2 text-sm font-medium text-green-700 bg-green-100 border border-green-200 rounded-md cursor-default"
+        className="w-full px-4 py-2 text-sm font-bold text-brand-primary bg-brand-primary/10 border border-brand-primary/20 rounded-md cursor-default"
       >
         {show.status ? "✓ In Library" : "✓ Saved"}
       </button>
@@ -40,11 +39,11 @@ const AddShowButton = ({ show }: { show: ShowSnippet }) => {
       onClick={handleClick}
       disabled={isPending}
       className={`
-        w-full px-4 py-2 text-sm font-medium text-white transition-all rounded-md
+        w-full px-4 py-2 text-sm font-bold transition-all rounded-md
         ${
           isPending
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700 active:scale-95 cursor-pointer"
+            ? "bg-surface-border text-gray-400 cursor-not-allowed"
+            : "bg-brand-primary text-black cursor-pointer hover:bg-brand-primary-hover active:scale-95 shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:shadow-[0_0_20px_rgba(34,197,94,0.5)]"
         }
       `}
     >
