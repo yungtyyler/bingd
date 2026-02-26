@@ -1,34 +1,39 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useDebouncedCallback } from "use-debounce";
 
 const Searchbar = ({ initialQuery }: { initialQuery: string }) => {
-  const router = useRouter();
-  const [value, setValue] = useState(initialQuery);
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { replace } = useRouter();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function onSubmit(e: any) {
-    e.preventDefault();
+  const handleSearch = useDebouncedCallback((term: string) => {
+    const params = new URLSearchParams(searchParams);
 
-    const q = value.trim();
-    const params = new URLSearchParams();
+    if (term) {
+      params.set("q", term);
+    } else {
+      params.delete("q");
+    }
 
-    if (q) params.set("q", q);
-
-    router.push(`/search?${params.toString()}`);
-  }
+    replace(`${pathname}?${params.toString()}`);
+  }, 150);
 
   return (
-    <form onSubmit={onSubmit} className="flex gap-2">
+    <div className="relative flex flex-1 shrink-0 w-full mb-6">
+      <label htmlFor="search" className="sr-only">
+        Search for a TV show
+      </label>
       <input
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder="Search TV shows..."
-        className="w-full rounded-md border px-3 py-2"
+        id="search"
+        type="text"
+        defaultValue={initialQuery}
+        onChange={(e) => handleSearch(e.target.value)}
+        placeholder="Search for a TV show (e.g. Severance, The Last of Us)..."
+        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm"
       />
-      <button className="rounded-md border px-4 py-2">Search</button>
-    </form>
+    </div>
   );
 };
 

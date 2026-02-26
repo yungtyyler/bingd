@@ -31,25 +31,35 @@ const SearchPage = async ({
       ) : (
         <ul className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {results.map((r) => (
-            <li key={r.tvmazeId} className="rounded-lg border p-3">
+            <li
+              key={r.tvmazeId}
+              className="rounded-lg border p-3 flex flex-col gap-2"
+            >
               <Link
                 href={`/shows/${r.tvmazeId}`}
-                className="group cursor-pointer"
+                className="group cursor-pointer flex flex-col gap-2"
               >
-                {r.imageUrl ? (
-                  <Image
-                    priority
-                    width={200}
-                    height={400}
-                    src={r.imageUrl}
-                    alt={r.name}
-                    className="w-full rounded-md mb-2"
-                  />
-                ) : (
-                  <div className="w-full aspect-2/3 rounded-md bg-black/10 mb-2" />
-                )}
-                <div className="font-medium">{r.name}</div>
+                <div className="relative w-full aspect-2/3 rounded-md overflow-hidden bg-gray-100">
+                  {r.imageUrl ? (
+                    <Image
+                      src={r.imageUrl}
+                      alt={r.name}
+                      fill
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full text-xs text-gray-400">
+                      No Image
+                    </div>
+                  )}
+                </div>
+
+                <div className="font-medium truncate group-hover:text-blue-600 transition-colors">
+                  {r.name}
+                </div>
               </Link>
+
               <AddShowButton show={r} />
             </li>
           ))}
