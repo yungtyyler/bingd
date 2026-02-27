@@ -42,7 +42,7 @@ const LibraryPage = async ({
         <h1 className="text-2xl font-bold">My Library</h1>
         <Link
           href="/search"
-          className="bg-blue-600 hover:bg-blue-700 transition-colors px-4 py-2 rounded text-white text-sm font-medium"
+          className="bg-brand-primary hover:bg-brand-primary-hover transition-colors px-4 py-2 rounded text-white text-sm font-medium"
         >
           + Add Show
         </Link>
@@ -84,7 +84,7 @@ const LibraryPage = async ({
                   )}
                 </div>
 
-                <h3 className="font-semibold truncate group-hover:text-blue-600 transition-colors">
+                <h3 className="font-semibold truncate group-hover:text-brand-primary-hover transition-colors">
                   {entry.show?.name}
                 </h3>
               </Link>

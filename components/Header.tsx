@@ -12,21 +12,15 @@ const Header = async () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link
           href="/"
-          className="max-w-15 bg-brand-primary-hover rounded-full p-1"
+          className="font-extrabold text-xl tracking-tighter text-white hover:text-brand-primary transition-colors"
         >
-          <Image
-            width={750}
-            height={750}
-            className="object-contain rounded-full"
-            src="/green_bingd_logo.png"
-            alt="Bingd Logo"
-          />
+          bingd.
         </Link>
 
         <nav className="flex items-center gap-6">
           {isAuthenticated ? (
             <>
-              <p>{user?.firstName}</p>
+              <p>Hey, {user?.firstName}!</p>
               <Link href="/dashboard">
                 <button className="px-4 py-2 text-sm font-bold text-black bg-white border-black rounded-full hover:bg-brand-primary-hover hover:text-white hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] cursor-pointer">
                   Dashboard

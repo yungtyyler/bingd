@@ -11,9 +11,9 @@ export default function AppHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-surface-border bg-surface-base/80 backdrop-blur-md">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+      <div className="container max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link
-          href="/dashboard"
+          href="/"
           className="font-extrabold text-xl tracking-tighter text-white hover:text-brand-primary transition-colors"
         >
           bingd.
