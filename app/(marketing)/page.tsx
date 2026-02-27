@@ -58,11 +58,6 @@ const HomePage = () => {
           description="See what your friends are binging, share recommendations, and compare your watch stats."
         />
       </section>
-
-      {/* 3. Simple Footer */}
-      <footer className="mt-auto pt-32 pb-8 text-center text-gray-600 text-sm">
-        <p>© {new Date().getFullYear()} bingd. All rights reserved.</p>
-      </footer>
     </div>
   );
 };

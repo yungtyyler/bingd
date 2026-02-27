@@ -2,70 +2,62 @@
 
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 
-const ProductHeader = () => {
+export default function AppHeader() {
   const pathname = usePathname();
-  const isActive = (path: string) => path === pathname;
+
+  const isActive = (path: string) => pathname === path;
 
   return (
-    <header className="border-b bg-white">
+    <header className="sticky top-0 z-50 border-b border-surface-border bg-surface-base/80 backdrop-blur-md">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Logo / Brand */}
-        <div className="max-w-15 bg-brand-primary-hover rounded-full p-1">
-          <Link href="/">
-            <Image
-              width={750}
-              height={750}
-              className="object-contain rounded-full"
-              src="/green_bingd_logo.png"
-              alt="Bingd Logo"
-            />
-          </Link>
-        </div>
+        <Link
+          href="/dashboard"
+          className="font-extrabold text-xl tracking-tighter text-white hover:text-brand-primary transition-colors"
+        >
+          bingd.
+        </Link>
 
-        {/* Navigation */}
         <nav className="flex items-center gap-6 text-sm font-medium">
           <Link
             href="/dashboard"
-            className={
-              isActive("/dashboard")
-                ? "text-black"
-                : "text-gray-500 hover:text-black"
-            }
+            className={`transition-colors hover:text-brand-primary ${
+              isActive("/dashboard") ? "text-brand-primary" : "text-gray-400"
+            }`}
           >
             Dashboard
           </Link>
           <Link
             href="/library"
-            className={
-              isActive("/library")
-                ? "text-black"
-                : "text-gray-500 hover:text-black"
-            }
+            className={`transition-colors hover:text-brand-primary ${
+              isActive("/library") ? "text-brand-primary" : "text-gray-400"
+            }`}
           >
             Library
           </Link>
           <Link
             href="/search"
-            className={
-              isActive("/search")
-                ? "text-black"
-                : "text-gray-500 hover:text-black"
-            }
+            className={`transition-colors hover:text-brand-primary ${
+              isActive("/search") ? "text-brand-primary" : "text-gray-400"
+            }`}
           >
             Search
           </Link>
         </nav>
 
-        {/* User Profile (Clerk) */}
         <div className="flex items-center gap-4">
-          <UserButton />
+          <UserButton
+            afterSignOutUrl="/"
+            appearance={{
+              elements: {
+                avatarBox:
+                  "w-8 h-8 ring-2 ring-surface-border hover:ring-brand-primary transition-all",
+              },
+            }}
+          />
         </div>
       </div>
     </header>
   );
-};
-
-export default ProductHeader;
+}

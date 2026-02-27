@@ -62,7 +62,7 @@ const LibraryPage = async ({
           {shows.map((entry) => (
             <div
               key={entry.id}
-              className="border rounded-lg p-3 flex flex-col gap-2 shadow-sm"
+              className="border border-surface-border bg-surface-card rounded-lg p-3 flex flex-col gap-2 shadow-sm hover:border-brand-primary/50 transition-colors"
             >
               <Link
                 href={`/shows/${entry.show?.tvmazeId}`}
