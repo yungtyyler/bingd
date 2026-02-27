@@ -13,13 +13,13 @@ const ProductHeader = () => {
     <header className="border-b bg-white">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo / Brand */}
-        <div className="max-w-15 bg-white rounded-full p-1">
+        <div className="max-w-15 bg-brand-primary-hover rounded-full p-1">
           <Link href="/">
             <Image
               width={750}
               height={750}
               className="object-contain rounded-full"
-              src="/bingd_logo.png"
+              src="/green_bingd_logo.png"
               alt="Bingd Logo"
             />
           </Link>

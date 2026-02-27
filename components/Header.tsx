@@ -6,12 +6,15 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 border-b border-surface-border bg-surface-base/80 backdrop-blur-md py-2">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link href="/" className="max-w-15 bg-white rounded-full p-1">
+        <Link
+          href="/"
+          className="max-w-15 bg-brand-primary-hover rounded-full p-1"
+        >
           <Image
             width={750}
             height={750}
             className="object-contain rounded-full"
-            src="/bingd_logo.png"
+            src="/green_bingd_logo.png"
             alt="Bingd Logo"
           />
         </Link>
