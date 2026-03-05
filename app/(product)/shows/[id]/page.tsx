@@ -38,10 +38,6 @@ const ShowPage = async ({ params }: { params: Promise<{ id: string }> }) => {
     });
   }
 
-  const network = tvmazeData.network?.name;
-  const webChannel = tvmazeData.webChannel?.name;
-  const whereToWatch = webChannel || network || "Platform Unknown";
-
   const showSnippet: ShowSnippet = {
     tvmazeId: tvmazeData.id,
     name: tvmazeData.name,
@@ -49,29 +45,54 @@ const ShowPage = async ({ params }: { params: Promise<{ id: string }> }) => {
   };
 
   return (
-    <main className="max-w-4xl mx-auto p-6 md:p-10 space-y-8">
+    <div className="max-w-5xl mx-auto p-6 md:p-10 mt-4">
       <div className="flex flex-col md:flex-row gap-8">
-        {/* Left Column: Poster & Actions */}
-        <div className="w-full md:w-1/3 shrink-0 space-y-4">
-          <div className="aspect-2/3 w-full bg-gray-100 rounded-xl overflow-hidden shadow-md">
-            {tvmazeData.image?.original ? (
+        <div className="w-full md:w-1/3">
+          <div className="relative aspect-2/3 w-full bg-black rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
+            {showSnippet.imageUrl ? (
               <Image
-                width={600}
-                height={900}
-                src={tvmazeData.image.original}
-                alt={tvmazeData.name}
-                className="object-cover w-full h-full"
+                priority
+                src={showSnippet.imageUrl}
+                alt={showSnippet.name}
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+                className="object-cover"
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">
-                No Image
+              <div className="flex items-center justify-center w-full h-full text-sm text-gray-600 bg-surface-base">
+                No Image Available
               </div>
             )}
           </div>
+        </div>
 
-          {/* Library Management Box */}
-          <div className="bg-gray-50 border rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+        <div className="w-full md:w-2/3 space-y-6 pt-4">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">
+            {tvmazeData.name}
+          </h1>
+
+          {tvmazeData.genres && tvmazeData.genres.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {tvmazeData.genres.map((genre: string) => (
+                <span
+                  key={genre}
+                  className="px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-surface-border text-gray-300 rounded-full"
+                >
+                  {genre}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div
+            className="text-gray-400 leading-relaxed text-lg"
+            dangerouslySetInnerHTML={{
+              __html: tvmazeData.summary || "No description available.",
+            }}
+          />
+
+          <div className="mt-8 max-w-md bg-surface-card border border-surface-border rounded-xl p-5 shadow-lg">
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">
               Your Library
             </h3>
             {userShow ? (
@@ -80,7 +101,6 @@ const ShowPage = async ({ params }: { params: Promise<{ id: string }> }) => {
                   initialStatus={userShow.status}
                   showId={dbShow!.id}
                 />
-
                 <DeleteShowButton
                   showId={dbShow!.id}
                   showName={tvmazeData.name}
@@ -91,58 +111,8 @@ const ShowPage = async ({ params }: { params: Promise<{ id: string }> }) => {
             )}
           </div>
         </div>
-
-        {/* Right Column: Details */}
-        <div className="flex-1 space-y-6">
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight mb-2">
-              {tvmazeData.name}
-            </h1>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 font-medium">
-              <span
-                className={`px-2 py-1 rounded border ${
-                  tvmazeData.status === "Ended"
-                    ? "bg-red-50 text-red-700 border-red-200"
-                    : "bg-green-50 text-green-700 border-green-200"
-                }`}
-              >
-                {tvmazeData.status}
-              </span>
-              <span>• {whereToWatch}</span>
-              {tvmazeData.premiered && (
-                <span>• Premiered {tvmazeData.premiered.substring(0, 4)}</span>
-              )}
-            </div>
-          </div>
-
-          {/* Genres */}
-          {tvmazeData.genres?.length > 0 && (
-            <div className="flex gap-2">
-              {tvmazeData.genres.map((genre: string) => (
-                <span
-                  key={genre}
-                  className="bg-gray-100 px-3 py-1 rounded-full text-xs font-medium text-gray-600"
-                >
-                  {genre}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Synopsis */}
-          <div className="prose prose-gray max-w-none">
-            <h2 className="text-xl font-semibold mb-2">Synopsis</h2>
-            <div
-              className="text-gray-700 leading-relaxed"
-              dangerouslySetInnerHTML={{
-                __html:
-                  tvmazeData.summary || "<p>No description available.</p>",
-              }}
-            />
-          </div>
-        </div>
       </div>
-    </main>
+    </div>
   );
 };
 
