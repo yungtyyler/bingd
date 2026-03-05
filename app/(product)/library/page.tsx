@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import Image from "next/image";
 import Link from "next/link";
 import { WatchStatus } from "@/app/generated/prisma/enums";
+import EmptyState from "@/components/EmptyState";
 
 const LibraryPage = async ({
   searchParams,
@@ -54,9 +55,13 @@ const LibraryPage = async ({
       </div>
 
       {shows.length === 0 ? (
-        <p className="text-gray-500">
-          No shows tracked yet. Go search for some!
-        </p>
+        currentFilter ? (
+          <p className="text-gray-500">
+            No shows tracked yet. Go search for some!
+          </p>
+        ) : (
+          <EmptyState firstName={dbUser.firstName} />
+        )
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
           {shows.map((entry) => (
@@ -73,7 +78,7 @@ const LibraryPage = async ({
                     <Image
                       src={entry.show.imageUrl}
                       alt={entry.show.name}
-                      fill // FILL replaces width/height
+                      fill
                       sizes="(max-width: 768px) 50vw, 25vw"
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />

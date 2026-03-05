@@ -1,19 +1,37 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
-export async function ensureDbUser() {
-  const { userId: authUserId } = await auth();
+export const ensureDbUser = async () => {
+  const { userId } = await auth();
 
-  if (!authUserId) {
-    throw new Error("Not Authenticated.");
+  if (!userId) {
+    throw new Error("Unauthorized");
   }
 
-  const user = await prisma.user.upsert({
-    where: { authUserId },
-    update: {},
-    create: { authUserId },
-    select: { id: true, authUserId: true },
+  const user = await prisma.user.findUnique({
+    where: { authUserId: userId },
   });
 
-  return user;
-}
+  if (user) {
+    if (!user.firstName) {
+      const clerkUser = await currentUser();
+      return await prisma.user.update({
+        where: { authUserId: userId },
+        data: {
+          firstName: clerkUser?.firstName || "Friend",
+          lastName: clerkUser?.lastName || "",
+        },
+      });
+    }
+    return user;
+  }
+
+  const clerkUser = await currentUser();
+  return await prisma.user.create({
+    data: {
+      authUserId: userId,
+      firstName: clerkUser?.firstName || "Friend",
+      lastName: clerkUser?.lastName || "",
+    },
+  });
+};

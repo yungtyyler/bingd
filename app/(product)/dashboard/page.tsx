@@ -1,105 +1,88 @@
-import { getDashboardShows } from "@/actions/shows";
-import { ensureDbUser } from "@/lib/ensure-user";
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
+import { ensureDbUser } from "@/lib/ensure-user";
+import prisma from "@/lib/prisma";
+import StatusSelect from "@/components/StatusSelect";
+import EmptyState from "@/components/EmptyState";
+import { WatchStatus } from "@/app/generated/prisma/client";
 
 const DashboardPage = async () => {
   const dbUser = await ensureDbUser();
-  const shows = await getDashboardShows(dbUser.id);
+
+  const activeShows = await prisma.userShow.findMany({
+    where: {
+      userId: dbUser.id,
+      status: WatchStatus.WATCHING,
+    },
+    include: { show: true },
+    orderBy: { updatedAt: "desc" },
+    take: 10,
+  });
 
   return (
-    <main className="p-6 md:p-10 space-y-8 max-w-6xl mx-auto">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
-        <p className="text-gray-500 text-sm">
-          Here is what is up next on your watch list.
+    <div className="p-8 max-w-7xl mx-auto">
+      <header className="mb-8">
+        <h1 className="text-3xl font-extrabold text-white tracking-tight">
+          Welcome back, {dbUser.firstName || "Friend"}
+        </h1>
+        <p className="text-gray-400 mt-1">
+          Here is what you are currently watching.
         </p>
-      </div>
+      </header>
 
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Currently Watching</h2>
+      {activeShows.length === 0 ? (
+        <div className="mt-4">
+          <EmptyState firstName={dbUser.firstName} />
+        </div>
+      ) : (
+        <section>
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 border-b border-surface-border pb-2">
+            Continue Watching
+          </h2>
 
-        {shows.length === 0 ? (
-          <div className="bg-gray-50 border border-dashed rounded-xl p-8 text-center space-y-3">
-            <p className="text-gray-500">
-              You aren&apos;t watching anything right now.
-            </p>
-            <Link
-              href="/library"
-              className="inline-block bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition"
-            >
-              Browse your Library
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {shows.map((show) => {
-              // Extract TVMaze status safely
-              const apiStatus = show.tvmazeData?.status;
-              const isEnded = apiStatus === "Ended";
-              const network =
-                show.tvmazeData?.network?.name ||
-                show.tvmazeData?.webChannel?.name;
-
-              return (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {activeShows.map((entry) => (
+              <div
+                key={entry.id}
+                className="border border-surface-border bg-surface-card rounded-lg p-3 flex flex-col gap-2 shadow-sm hover:border-brand-primary/50 transition-colors"
+              >
                 <Link
-                  key={show.id}
-                  href={`/shows/${show.show?.tvmazeId}`}
-                  className="group cursor-pointer"
+                  href={`/shows/${entry.show?.tvmazeId}`}
+                  className="group cursor-pointer flex flex-col gap-2"
                 >
-                  <div className="flex gap-4 p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
-                    {/* Thumbnail */}
-                    <div className="w-24 h-36 shrink-0 bg-gray-100 rounded-lg overflow-hidden relative">
-                      {show.show?.imageUrl ? (
-                        <Image
-                          priority
-                          width={96}
-                          height={144}
-                          src={show.show?.imageUrl ?? ""}
-                          alt={show.show?.name ?? ""}
-                          className="object-cover w-full h-full"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
-                          No Image
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Details */}
-                    <div className="flex flex-col flex-1 py-1">
-                      <h3 className="font-bold text-lg leading-tight line-clamp-2 mb-1 text-black">
-                        {show.show?.name}
-                      </h3>
-
-                      {network && (
-                        <p className="text-xs text-gray-500 font-medium mb-3">
-                          {network}
-                        </p>
-                      )}
-
-                      <div className="mt-auto space-y-2">
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                            isEnded
-                              ? "bg-red-50 text-red-700"
-                              : "bg-green-50 text-green-700"
-                          }`}
-                        >
-                          {apiStatus || "Unknown Status"}
-                        </span>
-
-                        {/* Add "Log Episode" button here later... */}
+                  <div className="relative aspect-2/3 w-full bg-black rounded-md overflow-hidden ring-1 ring-white/5 group-hover:ring-brand-primary/50 transition-all">
+                    {entry.show?.imageUrl ? (
+                      <Image
+                        src={entry.show.imageUrl}
+                        alt={entry.show.name}
+                        fill
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full text-xs text-gray-600 bg-surface-base">
+                        No Image
                       </div>
-                    </div>
+                    )}
                   </div>
+
+                  <h3 className="font-bold tracking-tight text-white truncate group-hover:text-brand-primary transition-colors">
+                    {entry.show?.name}
+                  </h3>
                 </Link>
-              );
-            })}
+
+                <div className="mt-auto pt-1">
+                  <StatusSelect
+                    showId={entry.showId}
+                    initialStatus={entry.status}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
-        )}
-      </section>
-    </main>
+        </section>
+      )}
+    </div>
   );
 };
 

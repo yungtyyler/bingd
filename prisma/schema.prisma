@@ -28,6 +28,10 @@ model User {
   // Clerk User ID
   authUserId String @unique
 
+  // Add these new fields!
+  firstName String?
+  lastName  String?
+
   shows UserShow[]
 }
 
