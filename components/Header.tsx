@@ -1,6 +1,5 @@
 import { SignInButton, SignOutButton, SignUpButton } from "@clerk/nextjs";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import Image from "next/image";
 import Link from "next/link";
 
 const Header = async () => {
@@ -27,23 +26,23 @@ const Header = async () => {
                 </button>
               </Link>
               <SignOutButton>
-                <button className="px-4 py-2 text-sm font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] cursor-pointer">
+                <div className="px-4 py-2 text-sm font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] cursor-pointer">
                   Sign Out
-                </button>
+                </div>
               </SignOutButton>
             </>
           ) : (
             <>
               <SignInButton mode="modal">
-                <button className="text-sm font-medium text-gray-400 hover:text-white transition-colors cursor-pointer">
+                <div className="text-sm font-medium text-gray-400 hover:text-white transition-colors cursor-pointer">
                   Log in
-                </button>
+                </div>
               </SignInButton>
 
               <SignUpButton mode="modal">
-                <button className="px-4 py-2 text-sm font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] cursor-pointer">
+                <div className="px-4 py-2 text-sm font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] cursor-pointer">
                   Sign Up
-                </button>
+                </div>
               </SignUpButton>
             </>
           )}
