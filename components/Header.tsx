@@ -1,10 +1,12 @@
-import { SignInButton, SignOutButton, SignUpButton } from "@clerk/nextjs";
-import { auth, currentUser } from "@clerk/nextjs/server";
+"use client";
+
+import { useClerk } from "@clerk/nextjs";
 import Link from "next/link";
 
-const Header = async () => {
-  const { isAuthenticated } = await auth();
-  const user = await currentUser();
+const Header = () => {
+  const { openSignIn, openSignUp, signOut, user } = useClerk();
+
+  const isAuthenticated = !!user;
 
   return (
     <header className="sticky top-0 z-50 border-b border-surface-border bg-surface-base/80 backdrop-blur-md py-2">
@@ -25,25 +27,28 @@ const Header = async () => {
                   Dashboard
                 </button>
               </Link>
-              <SignOutButton>
-                <div className="px-4 py-2 text-sm font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] cursor-pointer">
-                  Sign Out
-                </div>
-              </SignOutButton>
+              <button
+                onClick={() => signOut()}
+                className="px-4 py-2 text-sm font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] cursor-pointer"
+              >
+                Sign Up
+              </button>
             </>
           ) : (
             <>
-              <SignInButton mode="modal">
-                <div className="text-sm font-medium text-gray-400 hover:text-white transition-colors cursor-pointer">
-                  Log in
-                </div>
-              </SignInButton>
+              <button
+                onClick={() => openSignIn()}
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors cursor-pointer"
+              >
+                Log in
+              </button>
 
-              <SignUpButton mode="modal">
-                <div className="px-4 py-2 text-sm font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] cursor-pointer">
-                  Sign Up
-                </div>
-              </SignUpButton>
+              <button
+                onClick={() => openSignUp()}
+                className="px-4 py-2 text-sm font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] cursor-pointer"
+              >
+                Sign Up
+              </button>
             </>
           )}
         </nav>
