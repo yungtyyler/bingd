@@ -3,6 +3,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import Footer from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -60,9 +61,7 @@ export default function RootLayout({
         >
           <Toaster position="bottom-right" richColors />
           {children}
-          <footer className="mt-auto pt-32 pb-8 text-center text-gray-600 text-sm">
-            <p>© {new Date().getFullYear()} bingd. All rights reserved.</p>
-          </footer>
+          <Footer />
         </body>
       </html>
     </ClerkProvider>
