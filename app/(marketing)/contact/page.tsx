@@ -19,7 +19,7 @@ const ContactPage = () => {
       </p>
 
       <a
-        href="mailto:hello@tylervarzeas.com"
+        href="mailto:tyler.varzeas@gmail.com"
         className="inline-flex items-center gap-3 px-8 py-4 text-base font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)]"
       >
         <Mail className="w-5 h-5" />
