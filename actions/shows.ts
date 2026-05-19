@@ -85,13 +85,49 @@ export async function searchShows(query: string): Promise<ShowSnippet[]> {
 export async function addShow(show: ShowSnippet) {
   const dbUser = await ensureDbUser();
 
+  let networkName = null;
+  let showStatus = null;
+  let nextEpisodeDate = null;
+
+  try {
+    const res = await fetch(`https://api.tvmaze.com/shows/${show.tvmazeId}`);
+    if (res.ok) {
+      const tvmazeData = await res.json();
+
+      networkName =
+        tvmazeData.network?.name || tvmazeData.webChannel?.name || null;
+      showStatus = tvmazeData.status || null;
+
+      if (tvmazeData._links?.nextepisode?.href) {
+        const nextEpRes = await fetch(tvmazeData._links.nextepisode.href);
+        if (nextEpRes.ok) {
+          const nextEpData = await nextEpRes.json();
+          nextEpisodeDate = nextEpData.airstamp
+            ? new Date(nextEpData.airstamp)
+            : null;
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Failed to fetch extra TVMaze data during addShow:", err);
+  }
+
   const dbShow = await prisma.show.upsert({
     where: { tvmazeId: show.tvmazeId },
-    update: { name: show.name, imageUrl: show.imageUrl ?? null },
+    update: {
+      name: show.name,
+      imageUrl: show.imageUrl ?? null,
+      status: showStatus,
+      network: networkName,
+      nextEpisodeDate: nextEpisodeDate,
+    },
     create: {
       tvmazeId: show.tvmazeId,
       name: show.name,
       imageUrl: show.imageUrl ?? null,
+      status: showStatus,
+      network: networkName,
+      nextEpisodeDate: nextEpisodeDate,
     },
     select: { id: true },
   });

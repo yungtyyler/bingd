@@ -25,10 +25,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Clerk User ID
   authUserId String @unique
 
-  // Add these new fields!
   firstName String?
   lastName  String?
 
@@ -43,6 +41,10 @@ model Show {
   tvmazeId Int     @unique
   name     String
   imageUrl String?
+
+  status          String?
+  network         String?
+  nextEpisodeDate DateTime?
 
   users UserShow[]
 

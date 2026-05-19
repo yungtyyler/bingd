@@ -4,41 +4,116 @@ import { ensureDbUser } from "@/lib/ensure-user";
 import prisma from "@/lib/prisma";
 import StatusSelect from "@/components/StatusSelect";
 import EmptyState from "@/components/EmptyState";
-import { WatchStatus } from "@/app/generated/prisma/client";
+import { WatchStatus } from "@/app/generated/prisma/enums";
+import { Calendar, MonitorPlay } from "lucide-react";
 
 const DashboardPage = async () => {
   const dbUser = await ensureDbUser();
 
-  const activeShows = await prisma.userShow.findMany({
-    where: {
-      userId: dbUser.id,
-      status: WatchStatus.WATCHING,
-    },
-    include: { show: true },
-    orderBy: { updatedAt: "desc" },
-    take: 10,
-  });
+  const [activeShows, upcomingShows] = await Promise.all([
+    prisma.userShow.findMany({
+      where: {
+        userId: dbUser.id,
+        status: WatchStatus.WATCHING,
+      },
+      include: { show: true },
+      orderBy: { updatedAt: "desc" },
+      take: 10,
+    }),
+
+    prisma.userShow.findMany({
+      where: {
+        userId: dbUser.id,
+        show: {
+          nextEpisodeDate: {
+            gte: new Date(),
+          },
+        },
+      },
+      include: { show: true },
+      orderBy: {
+        show: { nextEpisodeDate: "asc" },
+      },
+      take: 4,
+    }),
+  ]);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <header className="mb-8">
+    <div className="p-8 max-w-7xl mx-auto space-y-12">
+      <header>
         <h1 className="text-3xl font-extrabold text-white tracking-tight">
           Welcome back, {dbUser.firstName || "Friend"}
         </h1>
-        <p className="text-gray-400 mt-1">
-          Here is what you are currently watching.
-        </p>
+        <p className="text-gray-400 mt-1">Here is your TV command center.</p>
       </header>
 
-      {activeShows.length === 0 ? (
-        <div className="mt-4">
-          <EmptyState firstName={dbUser.firstName} />
-        </div>
-      ) : (
+      {upcomingShows.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 border-b border-surface-border pb-2">
-            Continue Watching
-          </h2>
+          <div className="flex items-center gap-2 mb-4 border-b border-surface-border pb-2">
+            <Calendar className="w-4 h-4 text-brand-primary" />
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+              Upcoming Premieres
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {upcomingShows.map((entry) => {
+              const formattedDate = entry.show?.nextEpisodeDate
+                ? new Intl.DateTimeFormat("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  }).format(entry.show.nextEpisodeDate)
+                : "Soon";
+
+              return (
+                <Link href={`/shows/${entry.show?.tvmazeId}`} key={entry.id}>
+                  <div className="group border border-brand-primary/20 bg-brand-primary/5 rounded-xl p-4 flex items-center gap-4 shadow-[0_0_15px_rgba(34,197,94,0.05)] hover:border-brand-primary/50 hover:bg-brand-primary/10 transition-all cursor-pointer">
+                    <div className="relative w-16 h-24 bg-black rounded-md overflow-hidden ring-1 ring-white/10 shrink-0">
+                      {entry.show?.imageUrl ? (
+                        <Image
+                          src={entry.show.imageUrl}
+                          alt={entry.show.name}
+                          fill
+                          sizes="64px"
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-surface-base" />
+                      )}
+                    </div>
+
+                    <div className="flex flex-col justify-center overflow-hidden">
+                      <p className="text-brand-primary font-bold text-sm tracking-tight mb-1">
+                        {formattedDate}
+                      </p>
+                      <h3 className="font-extrabold text-white truncate text-lg group-hover:text-brand-primary transition-colors">
+                        {entry.show?.name}
+                      </h3>
+                      {entry.show?.network && (
+                        <p className="text-xs text-gray-400 font-medium mt-1 truncate">
+                          on {entry.show.network}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {activeShows.length === 0 && upcomingShows.length === 0 ? (
+        <EmptyState firstName={dbUser.firstName} />
+      ) : activeShows.length > 0 ? (
+        <section>
+          <div className="flex items-center gap-2 mb-4 border-b border-surface-border pb-2">
+            <MonitorPlay className="w-4 h-4 text-gray-500" />
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+              Continue Watching
+            </h2>
+          </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
             {activeShows.map((entry) => (
@@ -81,7 +156,7 @@ const DashboardPage = async () => {
             ))}
           </div>
         </section>
-      )}
+      ) : null}
     </div>
   );
 };
