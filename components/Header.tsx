@@ -43,6 +43,12 @@ const Header = () => {
                   Dashboard
                 </button>
               </Link>
+              <Link
+                href="/settings"
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors mr-4"
+              >
+                Settings
+              </Link>
               <button
                 onClick={() => signOut({ redirectUrl: "/" })}
                 className="text-sm font-medium text-gray-400 hover:text-white transition-colors cursor-pointer"

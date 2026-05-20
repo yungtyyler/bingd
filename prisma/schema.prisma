@@ -25,12 +25,28 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  authUserId String @unique
+  authUserId String  @unique
+  username   String? @unique
+  firstName  String?
+  lastName   String?
 
-  firstName String?
-  lastName  String?
+  profileImageUrl String?
 
-  shows UserShow[]
+  shows     UserShow[]
+  followers Follows[]  @relation("following")
+  following Follows[]  @relation("follower")
+}
+
+model Follows {
+  follower   User   @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followerId String
+
+  following   User   @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  followingId String
+
+  @@id([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
 }
 
 model Show {

@@ -27,11 +27,23 @@ export const ensureDbUser = async () => {
   }
 
   const clerkUser = await currentUser();
-  return await prisma.user.create({
-    data: {
-      authUserId: userId,
-      firstName: clerkUser?.firstName || "Friend",
-      lastName: clerkUser?.lastName || "",
-    },
-  });
+
+  try {
+    return await prisma.user.create({
+      data: {
+        authUserId: userId,
+        firstName: clerkUser?.firstName || "Friend",
+        lastName: clerkUser?.lastName || "",
+      },
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.code === "P2002") {
+      const existingUser = await prisma.user.findUnique({
+        where: { authUserId: userId },
+      });
+      if (existingUser) return existingUser;
+    }
+    throw error;
+  }
 };
