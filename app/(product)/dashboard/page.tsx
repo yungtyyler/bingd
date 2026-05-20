@@ -126,6 +126,12 @@ const DashboardPage = async () => {
                   className="group cursor-pointer flex flex-col gap-2"
                 >
                   <div className="relative aspect-2/3 w-full bg-black rounded-md overflow-hidden ring-1 ring-white/5 group-hover:ring-brand-primary/50 transition-all">
+                    {entry.show?.status === "Ended" && (
+                      <div className="absolute top-2 right-2 z-10 bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-bold text-gray-300 uppercase tracking-wider px-2 py-1 rounded shadow-lg">
+                        Ended
+                      </div>
+                    )}
+
                     {entry.show?.imageUrl ? (
                       <Image
                         src={entry.show.imageUrl}
