@@ -25,7 +25,7 @@ export default function EmptyState({
       </p>
 
       <Link href="/search">
-        <button className="px-6 py-3 text-sm font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+        <button className="cursor-pointer px-6 py-3 text-sm font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)]">
           Search for a Show
         </button>
       </Link>
