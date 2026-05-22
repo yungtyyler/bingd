@@ -38,16 +38,11 @@ const Header = () => {
               <p className="hidden sm:block text-sm text-gray-400">
                 Hey, {user?.firstName}!
               </p>
-              <Link href="/dashboard">
-                <button className="px-4 py-2 text-sm font-bold text-black bg-white border-black rounded-full hover:bg-brand-primary-hover hover:text-white hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] cursor-pointer">
-                  Dashboard
-                </button>
-              </Link>
               <Link
-                href="/settings"
-                className="text-sm font-medium text-gray-400 hover:text-white transition-colors mr-4"
+                href="/dashboard"
+                className="px-4 py-2 text-sm font-bold text-black bg-white border-black rounded-full hover:bg-brand-primary-hover hover:text-white hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] cursor-pointer"
               >
-                Settings
+                Dashboard
               </Link>
               <button
                 onClick={() => signOut({ redirectUrl: "/" })}

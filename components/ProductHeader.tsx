@@ -1,10 +1,11 @@
 "use client";
 
 import { UserButton } from "@clerk/nextjs";
+import { User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export default function AppHeader() {
+export default function AppHeader({ username }: { username: string | null }) {
   const pathname = usePathname();
 
   const isActive = (path: string) => pathname === path;
@@ -45,6 +46,12 @@ export default function AppHeader() {
             Search
           </Link>
           <Link
+            href="/feed"
+            className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+          >
+            Feed
+          </Link>
+          <Link
             href="/settings"
             className="text-sm font-medium text-gray-400 hover:text-white transition-colors mr-4"
           >
@@ -60,7 +67,18 @@ export default function AppHeader() {
                   "w-8 h-8 ring-2 ring-surface-border hover:ring-brand-primary transition-all",
               },
             }}
-          />
+          >
+            <UserButton.MenuItems>
+              <UserButton.Link
+                label="Public Profile"
+                labelIcon={<User className="w-4 h-4" />}
+                href={`/u/${username}`}
+              />
+
+              <UserButton.Action label="manageAccount" />
+              <UserButton.Action label="signOut" />
+            </UserButton.MenuItems>
+          </UserButton>
         </div>
       </div>
     </header>
