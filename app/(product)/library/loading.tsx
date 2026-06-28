@@ -1,6 +1,6 @@
 export default function LibraryLoading() {
   return (
-    <div className="p-8 max-w-7xl mx-auto animate-pulse">
+    <div className="max-w-7xl mx-auto animate-pulse sm:p-8">
       {/* Header & Button */}
       <div className="flex justify-between items-center mb-6">
         <div className="h-8 w-32 bg-surface-border rounded"></div>

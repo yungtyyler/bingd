@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import type { Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
-import Footer from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +18,7 @@ const geistMono = Geist_Mono({
 const BASE_ADDRESS = process.env.BASE_ADDRESS;
 
 export const metadata: Metadata = {
+  applicationName: "bingd.",
   title: {
     template: "%s | bingd.",
     default: "bingd. | The ultimate TV tracking companion",
@@ -46,6 +47,26 @@ export const metadata: Metadata = {
     description: "The ultimate TV tracking companion.",
     images: ["/green_bingd_logo.png"],
   },
+  appleWebApp: {
+    capable: true,
+    title: "bingd.",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: "/green_bingd_logo.png",
+    apple: "/green_bingd_logo.png",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+  themeColor: "#000000",
 };
 
 export default function RootLayout({
@@ -61,7 +82,6 @@ export default function RootLayout({
         >
           <Toaster position="bottom-right" richColors />
           {children}
-          <Footer />
         </body>
       </html>
     </ClerkProvider>

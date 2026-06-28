@@ -82,7 +82,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-12">
+    <div className="max-w-7xl mx-auto space-y-10 sm:space-y-12 sm:p-8">
       <header>
         <h1 className="text-3xl font-extrabold text-white tracking-tight">
           Search

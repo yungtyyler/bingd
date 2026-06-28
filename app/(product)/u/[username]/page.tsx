@@ -49,7 +49,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
   );
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-12">
+    <div className="max-w-7xl mx-auto space-y-10 sm:space-y-12 sm:p-8">
       <header className="flex flex-col md:flex-row items-center md:items-start gap-8 bg-surface-card border border-surface-border p-8 rounded-2xl shadow-sm">
         <div className="relative w-32 h-32 rounded-full overflow-hidden ring-4 ring-surface-base bg-linear-to-tr from-brand-primary to-green-900 flex items-center justify-center">
           <span className="text-4xl font-extrabold text-white/50 uppercase">

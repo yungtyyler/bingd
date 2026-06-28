@@ -38,8 +38,8 @@ const LibraryPage = async ({
   });
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
+    <div className="max-w-7xl mx-auto sm:p-8">
+      <div className="flex justify-between items-center gap-4 mb-8">
         <h1 className="text-2xl font-bold">My Library</h1>
         <Link
           href="/search"

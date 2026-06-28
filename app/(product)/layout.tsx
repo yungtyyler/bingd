@@ -6,9 +6,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await ensureDbUser();
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-surface-base">
       <ProductHeader username={user.username} />
-      <main className="flex-1 container mx-auto px-4 py-8">{children}</main>
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 pt-4 pb-28 sm:px-6 sm:py-8 md:pb-8">
+        {children}
+      </main>
     </div>
   );
 }
