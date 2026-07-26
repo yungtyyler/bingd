@@ -3,6 +3,7 @@
 import { updateNotificationPreferences } from "@/actions/notifications";
 import { Bell, CalendarClock, CalendarDays, Sparkles } from "lucide-react";
 import { useState } from "react";
+import TestNotificationButton from "./TestNotificationButton";
 import WebPushSubscriptionButton from "./WebPushSubscriptionButton";
 
 type NotificationPreferenceValues = {
@@ -120,6 +121,7 @@ export default function NotificationPreferencesForm({
       </button>
 
       <WebPushSubscriptionButton />
+      <TestNotificationButton />
     </form>
   );
 }
