@@ -160,12 +160,17 @@ export async function GET(request: NextRequest) {
 
   let sentCount = 0;
   let eligibleCount = 0;
-  let skippedCount = 0;
   let failedCount = 0;
+  const skipped = {
+    missingData: 0,
+    preferenceDisabled: 0,
+    dryRun: 0,
+    duplicate: 0,
+  };
 
   for (const trackedShow of trackedShows) {
     if (!trackedShow.user || !trackedShow.show) {
-      skippedCount++;
+      skipped.missingData++;
       continue;
     }
 
@@ -175,7 +180,7 @@ export async function GET(request: NextRequest) {
     const nextEpisodeDate = show.nextEpisodeDate;
 
     if (!preferences || !nextEpisodeDate) {
-      skippedCount++;
+      skipped.missingData++;
       continue;
     }
 
@@ -187,7 +192,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!type) {
-      skippedCount++;
+      skipped.preferenceDisabled++;
       continue;
     }
 
@@ -200,7 +205,7 @@ export async function GET(request: NextRequest) {
     eligibleCount++;
 
     if (isDryRun) {
-      skippedCount++;
+      skipped.dryRun++;
       continue;
     }
 
@@ -222,7 +227,7 @@ export async function GET(request: NextRequest) {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === "P2002"
       ) {
-        skippedCount++;
+        skipped.duplicate++;
         continue;
       }
 
@@ -274,7 +279,7 @@ export async function GET(request: NextRequest) {
     checked: trackedShows.length,
     eligible: eligibleCount,
     sent: sentCount,
-    skipped: skippedCount,
+    skipped,
     failed: failedCount,
   });
 }
