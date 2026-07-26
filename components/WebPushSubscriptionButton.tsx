@@ -48,7 +48,8 @@ export default function WebPushSubscriptionButton() {
         throw new Error("Notification permission was not granted.");
       }
 
-      const registration = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.register("/sw.js");
+      const registration = await navigator.serviceWorker.ready;
       const existingSubscription =
         await registration.pushManager.getSubscription();
       const subscription =
