@@ -37,3 +37,19 @@ CRON_SECRET="replace-with-a-long-random-secret"
 - Do not commit real credentials.
 - Keep development, staging, and production databases separate.
 - Backups and restore windows should be configured before launch.
+
+## Smoke Test
+
+After deploying production environment variables and migrations, run:
+
+```bash
+npm run smoke:production
+```
+
+If your local `BASE_ADDRESS` points at localhost, set `SMOKE_BASE_ADDRESS` first:
+
+```bash
+SMOKE_BASE_ADDRESS="https://your-production-domain.com" npm run smoke:production
+```
+
+This checks public metadata, protected cron authorization, and the notification dry-run endpoint without sending push notifications.
