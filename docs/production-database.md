@@ -52,4 +52,4 @@ If your local `BASE_ADDRESS` points at localhost, set `SMOKE_BASE_ADDRESS` first
 SMOKE_BASE_ADDRESS="https://your-production-domain.com" npm run smoke:production
 ```
 
-This checks public metadata, protected cron authorization, the notification dry-run endpoint, and the daily cron dry-run endpoint without sending push notifications.
+This checks public metadata, the branded 404 page, health/config readiness, protected cron authorization, the notification dry-run endpoint, and the daily cron dry-run endpoint without sending push notifications.

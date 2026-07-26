@@ -111,6 +111,16 @@ async function main() {
     };
   });
 
+  await addCheck("health", async () => {
+    const { response, json } = await readJson("/api/health");
+    const result = json as { success?: boolean; status?: string };
+
+    return {
+      ok: response.ok && result.success === true && result.status === "ok",
+      detail: `HTTP ${response.status}, status=${result.status ?? "?"}`,
+    };
+  });
+
   await addCheck("send notifications rejects anonymous", async () => {
     const { response } = await readJson(
       "/api/send-notifications?dryRun=true",
@@ -141,6 +151,33 @@ async function main() {
   });
 
   if (cronSecret) {
+    await addCheck("health config", async () => {
+      const { response, json } = await readJson("/api/health", {
+        headers: {
+          authorization: `Bearer ${cronSecret}`,
+        },
+      });
+      const result = json as {
+        success?: boolean;
+        checks?: Array<{ name?: string; ok?: boolean }>;
+      };
+      const failedChecks =
+        result.checks
+          ?.filter((check) => check.ok !== true)
+          .map((check) => check.name || "unknown") ?? [];
+
+      return {
+        ok:
+          response.ok &&
+          result.success === true &&
+          Array.isArray(result.checks) &&
+          failedChecks.length === 0,
+        detail: `HTTP ${response.status}, failed=${
+          failedChecks.length > 0 ? failedChecks.join(",") : "none"
+        }`,
+      };
+    });
+
     await addCheck("notification dry run", async () => {
       const { response, json } = await readJson(
         "/api/send-notifications?dryRun=true",
@@ -192,6 +229,11 @@ async function main() {
       };
     });
   } else {
+    checks.push({
+      name: "health config",
+      ok: false,
+      detail: "CRON_SECRET is missing.",
+    });
     checks.push({
       name: "notification dry run",
       ok: false,
