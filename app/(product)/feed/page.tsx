@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ensureDbUser } from "@/lib/ensure-user";
 import prisma from "@/lib/prisma";
 import { WatchStatus } from "@/app/generated/prisma/enums";
+import { PENDING_USERNAME_PREFIX } from "@/lib/usernames";
 
 export const metadata = { title: "Activity Feed | bingd" };
 
@@ -19,6 +20,13 @@ export default async function FeedPage() {
   const recentActivity = await prisma.userShow.findMany({
     where: {
       userId: { in: followingIds },
+      user: {
+        username: {
+          not: {
+            startsWith: PENDING_USERNAME_PREFIX,
+          },
+        },
+      },
     },
     include: {
       show: true,

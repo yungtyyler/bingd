@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { WatchStatus } from "@/app/generated/prisma/enums";
+import { isPendingUsername } from "@/lib/usernames";
 
 interface ProfilePageProps {
   params: {
@@ -14,9 +15,14 @@ interface ProfilePageProps {
 
 export default async function PublicProfilePage({ params }: ProfilePageProps) {
   const { username } = await params;
+  const normalizedUsername = username.toLowerCase();
+
+  if (isPendingUsername(normalizedUsername)) {
+    notFound();
+  }
 
   const profileUser = await prisma.user.findUnique({
-    where: { username: username.toLowerCase() },
+    where: { username: normalizedUsername },
     include: {
       shows: {
         include: { show: true },
@@ -28,7 +34,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
     },
   });
 
-  if (!profileUser) {
+  if (!profileUser || isPendingUsername(profileUser.username)) {
     notFound();
   }
 
