@@ -42,6 +42,10 @@ const notificationOptions = [
   },
 ] as const;
 
+const showTestNotifications =
+  process.env.NODE_ENV !== "production" ||
+  process.env.NEXT_PUBLIC_ENABLE_TEST_NOTIFICATIONS === "true";
+
 export default function NotificationPreferencesForm({
   preferences,
 }: {
@@ -121,7 +125,7 @@ export default function NotificationPreferencesForm({
       </button>
 
       <WebPushSubscriptionButton />
-      <TestNotificationButton />
+      {showTestNotifications && <TestNotificationButton />}
     </form>
   );
 }

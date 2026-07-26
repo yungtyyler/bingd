@@ -102,6 +102,7 @@ function getNotificationCopy({
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
+  const isDryRun = request.nextUrl.searchParams.get("dryRun") === "true";
 
   if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json(
@@ -110,7 +111,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  configureWebPush();
+  if (!isDryRun) {
+    configureWebPush();
+  }
 
   const now = new Date();
   const weekFromNow = new Date(now.getTime() + oneWeekInMs);
@@ -156,6 +159,7 @@ export async function GET(request: NextRequest) {
   });
 
   let sentCount = 0;
+  let eligibleCount = 0;
   let skippedCount = 0;
   let failedCount = 0;
 
@@ -193,6 +197,12 @@ export async function GET(request: NextRequest) {
       episodeName: show.nextEpisodeName,
       type,
     });
+    eligibleCount++;
+
+    if (isDryRun) {
+      skippedCount++;
+      continue;
+    }
 
     let log;
 
@@ -260,7 +270,9 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     success: true,
+    dryRun: isDryRun,
     checked: trackedShows.length,
+    eligible: eligibleCount,
     sent: sentCount,
     skipped: skippedCount,
     failed: failedCount,
