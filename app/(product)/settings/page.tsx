@@ -2,6 +2,7 @@ import { UserProfile } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { ensureDbUser } from "@/lib/ensure-user";
 import prisma from "@/lib/prisma";
+import NotificationHistory from "@/components/NotificationHistory";
 import NotificationPreferencesForm from "@/components/NotificationPreferencesForm";
 import UsernameForm from "@/components/UsernameForm";
 
@@ -9,10 +10,21 @@ export const metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
   const dbUser = await ensureDbUser();
-  const notificationPreference =
-    await prisma.notificationPreference.findUnique({
+  const [notificationPreference, notificationLogs] = await Promise.all([
+    prisma.notificationPreference.findUnique({
       where: { userId: dbUser.id },
-    });
+    }),
+    prisma.notificationLog.findMany({
+      where: { userId: dbUser.id },
+      include: {
+        show: {
+          select: { name: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+    }),
+  ]);
 
   const notificationPreferences = {
     pushEnabled: notificationPreference?.pushEnabled ?? false,
@@ -61,6 +73,8 @@ export default async function SettingsPage() {
               preferences={notificationPreferences}
             />
           </section>
+
+          <NotificationHistory logs={notificationLogs} />
         </div>
 
         <div className="lg:col-span-2 flex justify-center lg:justify-start">
