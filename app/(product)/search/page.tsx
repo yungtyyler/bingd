@@ -9,13 +9,84 @@ import Searchbar from "@/components/Searchbar";
 import StatusSelect from "@/components/StatusSelect";
 import AddShowButton from "@/components/AddShowButton";
 import { WatchStatus } from "@/app/generated/prisma/enums";
+import { Prisma } from "@/app/generated/prisma/client";
 
 interface SearchPageProps {
   searchParams: Promise<{ q?: string }>;
 }
 
+function getSearchTokens(query: string) {
+  return Array.from(
+    new Set(query.split(/\s+/).map((token) => token.trim()).filter(Boolean)),
+  ).slice(0, 5);
+}
+
+function buildUserSearchWhere(query: string): Prisma.UserWhereInput {
+  const compactQuery = query.replace(/\s+/g, "");
+  const tokens = getSearchTokens(query);
+  const wholeQueryMatches: Prisma.UserWhereInput[] = [
+    { username: { contains: query, mode: "insensitive" } },
+    { firstName: { contains: query, mode: "insensitive" } },
+    { lastName: { contains: query, mode: "insensitive" } },
+  ];
+
+  if (compactQuery !== query) {
+    wholeQueryMatches.push({
+      username: { contains: compactQuery, mode: "insensitive" },
+    });
+  }
+
+  if (tokens.length > 1) {
+    wholeQueryMatches.push({
+      AND: tokens.map((token) => ({
+        OR: [
+          { username: { contains: token, mode: "insensitive" } },
+          { firstName: { contains: token, mode: "insensitive" } },
+          { lastName: { contains: token, mode: "insensitive" } },
+        ],
+      })),
+    });
+  }
+
+  return {
+    username: { not: null },
+    OR: wholeQueryMatches,
+  };
+}
+
+function scoreUserSearchResult(user: any, query: string) {
+  const normalizedQuery = query.toLowerCase();
+  const compactQuery = normalizedQuery.replace(/\s+/g, "");
+  const username = user.username?.toLowerCase() || "";
+  const firstName = user.firstName?.toLowerCase() || "";
+  const lastName = user.lastName?.toLowerCase() || "";
+  const fullName = [firstName, lastName].filter(Boolean).join(" ");
+  const compactFullName = fullName.replace(/\s+/g, "");
+  const tokens = getSearchTokens(normalizedQuery);
+
+  let score = 0;
+
+  if (username === normalizedQuery || username === compactQuery) score += 100;
+  if (fullName === normalizedQuery || compactFullName === compactQuery) {
+    score += 90;
+  }
+  if (username.startsWith(compactQuery)) score += 50;
+  if (fullName.startsWith(normalizedQuery)) score += 45;
+  if (username.includes(compactQuery)) score += 25;
+  if (fullName.includes(normalizedQuery)) score += 20;
+
+  for (const token of tokens) {
+    if (username.includes(token)) score += 8;
+    if (firstName.includes(token)) score += 8;
+    if (lastName.includes(token)) score += 8;
+  }
+
+  return score;
+}
+
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q } = await searchParams;
+  const query = q?.trim() || "";
   const dbUser = await ensureDbUser();
 
   let shows: any[] = [];
@@ -26,24 +97,22 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     { status: WatchStatus; internalShowId: string }
   >();
 
-  if (q) {
+  if (query) {
     const [fetchedShows, fetchedUsers] = await Promise.all([
-      searchShows(q),
+      searchShows(query),
       prisma.user.findMany({
-        where: {
-          id: { not: dbUser.id },
-          OR: [
-            { username: { contains: q, mode: "insensitive" } },
-            { firstName: { contains: q, mode: "insensitive" } },
-            { lastName: { contains: q, mode: "insensitive" } },
-          ],
-        },
-        take: 5,
+        where: buildUserSearchWhere(query),
+        take: 20,
       }),
     ]);
 
     shows = fetchedShows;
-    users = fetchedUsers;
+    users = fetchedUsers
+      .sort(
+        (a, b) =>
+          scoreUserSearchResult(b, query) - scoreUserSearchResult(a, query),
+      )
+      .slice(0, 5);
 
     if (shows.length > 0) {
       const tvmazeIds = shows.map((s) => s.tvmazeId);
@@ -88,8 +157,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           Search
         </h1>
         <p className="text-gray-400 mt-1">
-          {q
-            ? `Showing results for "${q}"`
+          {query
+            ? `Showing results for "${query}"`
             : "Find shows to watch and friends to follow."}
         </p>
       </header>
@@ -98,7 +167,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         <Searchbar variant="page" />
       </div>
 
-      {!q && (
+      {!query && (
         <div className="text-center p-12 border border-surface-border rounded-xl">
           <p className="text-gray-500">
             Use the search bar in the header to get started.
@@ -106,7 +175,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </div>
       )}
 
-      {q && (
+      {query && (
         <div className="space-y-12">
           {/* --- SECTION 1: PEOPLE --- */}
           {users.length > 0 && (
@@ -115,46 +184,59 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 People
               </h2>
               <div className="flex flex-col gap-4 max-w-3xl">
-                {users.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between p-4 bg-surface-card border border-surface-border rounded-xl hover:border-brand-primary/30 transition-colors"
-                  >
-                    <Link
-                      href={`/u/${user.username}`}
-                      className="flex items-center gap-4"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-surface-base border border-surface-border flex items-center justify-center overflow-hidden relative">
-                        {user.profileImageUrl ? (
-                          <Image
-                            src={user.profileImageUrl}
-                            alt={user.username}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <span className="font-bold text-gray-400 uppercase">
-                            {user.firstName?.charAt(0) || "U"}
-                          </span>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-bold text-white hover:text-brand-primary transition-colors">
-                          {user.firstName} {user.lastName}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          @{user.username}
-                        </p>
-                      </div>
-                    </Link>
+                {users.map((user) => {
+                  const isCurrentUser = user.id === dbUser.id;
 
-                    <FollowButton
-                      targetUserId={user.id}
-                      initialIsFollowing={followingIds.has(user.id)}
-                      username={user.username}
-                    />
-                  </div>
-                ))}
+                  return (
+                    <div
+                      key={user.id}
+                      className="flex items-center justify-between gap-4 p-4 bg-surface-card border border-surface-border rounded-xl hover:border-brand-primary/30 transition-colors"
+                    >
+                      <Link
+                        href={`/u/${user.username}`}
+                        className="flex min-w-0 items-center gap-4"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-surface-base border border-surface-border flex items-center justify-center overflow-hidden relative shrink-0">
+                          {user.profileImageUrl ? (
+                            <Image
+                              src={user.profileImageUrl}
+                              alt={user.username}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <span className="font-bold text-gray-400 uppercase">
+                              {user.firstName?.charAt(0) || "U"}
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-white hover:text-brand-primary transition-colors truncate">
+                            {user.firstName} {user.lastName}
+                          </p>
+                          <p className="text-sm text-gray-500 truncate">
+                            @{user.username}
+                          </p>
+                        </div>
+                      </Link>
+
+                      {isCurrentUser ? (
+                        <Link
+                          href={`/u/${user.username}`}
+                          className="shrink-0 rounded-full border border-brand-primary/30 bg-brand-primary/10 px-4 py-2 text-sm font-bold text-brand-primary transition-colors hover:bg-brand-primary/15"
+                        >
+                          Your Profile
+                        </Link>
+                      ) : (
+                        <FollowButton
+                          targetUserId={user.id}
+                          initialIsFollowing={followingIds.has(user.id)}
+                          username={user.username}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </section>
           )}
