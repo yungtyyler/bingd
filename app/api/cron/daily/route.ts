@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
   const origin =
     process.env.BASE_ADDRESS?.replace(/\/$/, "") || request.nextUrl.origin;
   const headers = { authorization: `Bearer ${cronSecret}` };
+  const syncLimit = encodeURIComponent(process.env.SYNC_SHOWS_PER_RUN || "75");
 
   if (isDryRun) {
     const notificationResponse = await fetch(
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const syncResponse = await fetch(`${origin}/api/sync-shows`, {
+  const syncResponse = await fetch(`${origin}/api/sync-shows?limit=${syncLimit}`, {
     headers,
     cache: "no-store",
   });

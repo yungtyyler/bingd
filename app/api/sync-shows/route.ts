@@ -3,9 +3,26 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+const defaultSyncLimit = 75;
+const maxSyncLimit = 150;
+
+function getSyncLimit(request: NextRequest) {
+  const rawLimit =
+    request.nextUrl.searchParams.get("limit") || process.env.SYNC_SHOWS_PER_RUN;
+  const parsedLimit = Number(rawLimit);
+
+  if (!Number.isFinite(parsedLimit)) {
+    return defaultSyncLimit;
+  }
+
+  return Math.min(Math.max(Math.floor(parsedLimit), 1), maxSyncLimit);
+}
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
+  const limit = getSyncLimit(request);
 
   if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json(
@@ -15,14 +32,24 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const shows = await prisma.show.findMany();
+    const [shows, totalShows] = await Promise.all([
+      prisma.show.findMany({
+        orderBy: { updatedAt: "asc" },
+        take: limit,
+      }),
+      prisma.show.count(),
+    ]);
     let updatedCount = 0;
+    let skippedCount = 0;
 
     for (const show of shows) {
       await new Promise((resolve) => setTimeout(resolve, 250));
 
       const res = await fetch(`https://api.tvmaze.com/shows/${show.tvmazeId}`);
-      if (!res.ok) continue;
+      if (!res.ok) {
+        skippedCount++;
+        continue;
+      }
 
       const tvmazeData = await res.json();
 
@@ -66,7 +93,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Successfully synced ${updatedCount} shows.`,
+      total: totalShows,
+      checked: shows.length,
+      updated: updatedCount,
+      skipped: skippedCount,
+      limit,
+      hasMore: totalShows > shows.length,
+      message: `Successfully synced ${updatedCount} of ${shows.length} checked shows.`,
     });
   } catch (error) {
     console.error("Sync error:", error);
