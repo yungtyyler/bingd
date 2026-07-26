@@ -6,6 +6,12 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { SITE_URL, SITE_URL_OBJECT } from "@/lib/site-url";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import {
+  DEFAULT_SEO_DESCRIPTION,
+  DEFAULT_SEO_TITLE,
+  SEO_KEYWORDS,
+  SITE_NAME,
+} from "@/lib/seo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,24 +25,32 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: SITE_URL_OBJECT,
-  applicationName: "bingd.",
+  applicationName: SITE_NAME,
   title: {
-    template: "%s | bingd.",
-    default: "bingd. | The ultimate TV tracking companion",
+    template: `%s | ${SITE_NAME}`,
+    default: DEFAULT_SEO_TITLE,
   },
-  description:
-    "Stop asking 'What episode was I on?'. Track what you're watching, discover where to stream it, and never lose your place again.",
+  description: DEFAULT_SEO_DESCRIPTION,
+  keywords: SEO_KEYWORDS,
+  authors: [{ name: "bingd." }],
+  creator: "bingd.",
+  publisher: "bingd.",
+  category: "Entertainment",
+  manifest: "/manifest.webmanifest",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "bingd.",
-    description: "The ultimate TV tracking companion.",
+    title: DEFAULT_SEO_TITLE,
+    description: DEFAULT_SEO_DESCRIPTION,
     url: SITE_URL,
-    siteName: "bingd.",
+    siteName: SITE_NAME,
     images: [
       {
-        url: "/green_bingd_logo.png",
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "bingd. Logo",
+        alt: "bingd. TV tracking app",
       },
     ],
     locale: "en_US",
@@ -44,9 +58,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "bingd.",
-    description: "The ultimate TV tracking companion.",
-    images: ["/green_bingd_logo.png"],
+    title: DEFAULT_SEO_TITLE,
+    description: DEFAULT_SEO_DESCRIPTION,
+    images: ["/opengraph-image"],
   },
   appleWebApp: {
     capable: true,

@@ -1,10 +1,12 @@
 import { Metadata } from "next";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: "About",
+  path: "/about",
   description:
     "The story behind bingd and why we built the ultimate TV tracking companion.",
-};
+});
 
 const AboutPage = () => {
   return (

@@ -1,9 +1,54 @@
 import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { Tv, Sparkles, Users, Bell } from "lucide-react";
+import StructuredData from "@/components/StructuredData";
+import { absoluteUrl, DEFAULT_SEO_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 
 const HomePage = () => {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${absoluteUrl()}#organization`,
+        name: SITE_NAME,
+        url: absoluteUrl(),
+        logo: absoluteUrl("/icons/icon-512.png"),
+        contactPoint: {
+          "@type": "ContactPoint",
+          contactType: "customer support",
+          email: "tyler.varzeas@gmail.com",
+        },
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${absoluteUrl()}#website`,
+        name: SITE_NAME,
+        url: absoluteUrl(),
+        description: DEFAULT_SEO_DESCRIPTION,
+        publisher: {
+          "@id": `${absoluteUrl()}#organization`,
+        },
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": `${absoluteUrl()}#app`,
+        name: SITE_NAME,
+        applicationCategory: "EntertainmentApplication",
+        operatingSystem: "iOS, Android, Web",
+        url: absoluteUrl(),
+        description: DEFAULT_SEO_DESCRIPTION,
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "USD",
+        },
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center pt-20 pb-16 px-4 sm:px-6 lg:px-8">
+      <StructuredData data={structuredData} />
       {/* 1. Hero Section */}
       <section className="text-center max-w-4xl mx-auto space-y-8 mt-10">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-primary/10 text-brand-primary text-sm font-medium border border-brand-primary/20 mb-4">

@@ -1,10 +1,12 @@
 import { Metadata } from "next";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: "Privacy Policy",
+  path: "/privacy",
   description:
     "How bingd collects, uses, and protects your personal information.",
-};
+});
 
 const LAST_UPDATED = "July 26, 2026";
 

@@ -18,6 +18,8 @@ Use this as the short path from production web beta to TestFlight and store revi
 - Clerk is using a production instance with `https://getbingd.com` allowed for app URLs, redirects, and OAuth callbacks.
 - Neon production backups and restore windows are enabled.
 - `npm run smoke:production` passes against `https://getbingd.com`.
+- Public SEO metadata, social share image, robots, sitemap, and structured data are live.
+- `https://getbingd.com/sitemap.xml` is submitted in Google Search Console.
 - Account deletion, privacy policy, terms, support contact, install flow, and push opt-in are available from production.
 
 ## TestFlight Prep
@@ -36,4 +38,3 @@ Use this as the short path from production web beta to TestFlight and store revi
 - Complete Apple privacy nutrition labels and Google Play data safety form.
 - Run a small beta with real users and verify notifications, account deletion, onboarding, and search.
 - Decide which premium features ship in the first paid release.
-

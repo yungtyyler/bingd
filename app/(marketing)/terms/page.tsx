@@ -1,9 +1,11 @@
 import { Metadata } from "next";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: "Terms of Service",
+  path: "/terms",
   description: "Terms and conditions for using the bingd service.",
-};
+});
 
 const LAST_UPDATED = "July 26, 2026";
 

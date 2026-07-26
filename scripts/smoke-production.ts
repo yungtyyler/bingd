@@ -6,15 +6,17 @@ type CheckResult = {
   detail: string;
 };
 
-const baseAddress = (
+const rawBaseAddress = (
   process.env.SMOKE_BASE_ADDRESS ||
   process.env.BASE_ADDRESS
 )?.replace(/\/$/, "");
 const cronSecret = process.env.CRON_SECRET;
 
-if (!baseAddress) {
+if (!rawBaseAddress) {
   throw new Error("BASE_ADDRESS is required.");
 }
+
+const baseAddress = rawBaseAddress;
 
 async function readText(path: string) {
   const response = await fetch(`${baseAddress}${path}`);
@@ -65,6 +67,20 @@ async function main() {
     };
   });
 
+  await addCheck("home SEO metadata", async () => {
+    const { response, text } = await readText("/");
+    const hasCanonical = text.includes(`rel="canonical" href="${baseAddress}"`);
+    const hasStructuredData = text.includes('application/ld+json');
+    const hasDescription = text.includes(
+      "Track your shows, build your watchlist",
+    );
+
+    return {
+      ok: response.ok && hasCanonical && hasStructuredData && hasDescription,
+      detail: `HTTP ${response.status}, canonical=${hasCanonical}, structuredData=${hasStructuredData}`,
+    };
+  });
+
   await addCheck("manifest", async () => {
     const { response, json } = await readJson("/manifest.webmanifest");
     const manifest = json as {
@@ -97,8 +113,44 @@ async function main() {
     const { response, text } = await readText("/robots.txt");
 
     return {
-      ok: response.ok && text.includes("/sitemap.xml"),
+      ok:
+        response.ok &&
+        text.includes("/sitemap.xml") &&
+        text.includes("Disallow: /api/"),
       detail: `HTTP ${response.status}`,
+    };
+  });
+
+  await addCheck("sitemap", async () => {
+    const { response, text } = await readText("/sitemap.xml");
+    const requiredUrls = [
+      baseAddress,
+      `${baseAddress}/about`,
+      `${baseAddress}/contact`,
+      `${baseAddress}/privacy`,
+      `${baseAddress}/terms`,
+    ];
+    const missingUrls = requiredUrls.filter((url) => !text.includes(url));
+
+    return {
+      ok: response.ok && missingUrls.length === 0,
+      detail: `HTTP ${response.status}, missing=${
+        missingUrls.length > 0 ? missingUrls.join(",") : "none"
+      }`,
+    };
+  });
+
+  await addCheck("open graph image", async () => {
+    const response = await fetch(`${baseAddress}/opengraph-image`);
+    const contentType = response.headers.get("content-type") || "";
+    const bytes = await response.arrayBuffer();
+
+    return {
+      ok:
+        response.ok &&
+        contentType.includes("image/png") &&
+        bytes.byteLength > 1000,
+      detail: `HTTP ${response.status}, type=${contentType}, bytes=${bytes.byteLength}`,
     };
   });
 
