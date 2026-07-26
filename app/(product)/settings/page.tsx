@@ -3,6 +3,7 @@ import { dark } from "@clerk/themes";
 import { ensureDbUser } from "@/lib/ensure-user";
 import prisma from "@/lib/prisma";
 import DeleteAccountSection from "@/components/DeleteAccountSection";
+import InstallAppSection from "@/components/InstallAppSection";
 import NotificationHistory from "@/components/NotificationHistory";
 import NotificationPreferencesForm from "@/components/NotificationPreferencesForm";
 import UsernameForm from "@/components/UsernameForm";
@@ -61,6 +62,8 @@ export default async function SettingsPage() {
 
             <UsernameForm initialUsername={dbUser.username} />
           </section>
+
+          <InstallAppSection />
 
           <section className="bg-surface-card border border-surface-border p-6 rounded-xl shadow-sm">
             <h2 className="text-xl font-bold text-white mb-2">
