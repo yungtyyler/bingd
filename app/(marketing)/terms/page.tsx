@@ -5,6 +5,8 @@ export const metadata: Metadata = {
   description: "Terms and conditions for using the bingd service.",
 };
 
+const LAST_UPDATED = "July 26, 2026";
+
 const TermsPage = () => {
   return (
     <div className="max-w-3xl mx-auto py-24 px-6 md:px-12">
@@ -13,7 +15,7 @@ const TermsPage = () => {
       </h1>
 
       <div className="space-y-6 text-gray-400 leading-relaxed text-sm">
-        <p>Last updated: {new Date().toLocaleDateString()}</p>
+        <p>Last updated: {LAST_UPDATED}</p>
         <p>
           Welcome to bingd. By accessing or using our website and services, you
           agree to be bound by these Terms of Service.
@@ -78,10 +80,6 @@ const TermsPage = () => {
           You may delete your account from Settings. Account deletion removes
           your bingd account data from the active application database and
           deletes your authentication account.
-        </p>
-
-        <p className="pt-8 text-xs text-gray-500 italic">
-          Note: These terms should be reviewed before a full public launch.
         </p>
       </div>
     </div>

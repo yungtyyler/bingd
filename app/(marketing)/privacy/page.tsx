@@ -6,6 +6,8 @@ export const metadata: Metadata = {
     "How bingd collects, uses, and protects your personal information.",
 };
 
+const LAST_UPDATED = "July 26, 2026";
+
 const PrivacyPage = () => {
   return (
     <div className="max-w-3xl mx-auto py-24 px-6 md:px-12">
@@ -13,7 +15,7 @@ const PrivacyPage = () => {
         Privacy Policy
       </h1>
       <div className="space-y-6 text-gray-400 leading-relaxed text-sm">
-        <p>Last updated: {new Date().toLocaleDateString()}</p>
+        <p>Last updated: {LAST_UPDATED}</p>
         <p>
           At bingd, we take your privacy seriously. This policy describes how we
           collect, use, and handle your personal information when you use our
@@ -64,11 +66,6 @@ const PrivacyPage = () => {
           bingd uses service providers for authentication, hosting, database
           storage, and show metadata. These providers process data as needed to
           operate the service.
-        </p>
-
-        {/* Add more standard privacy clauses as needed */}
-        <p className="pt-8 text-xs text-gray-500 italic">
-          Note: This policy should be reviewed before a full public launch.
         </p>
       </div>
     </div>
