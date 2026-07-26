@@ -1,9 +1,15 @@
 import ProductHeader from "@/components/ProductHeader";
 import { ensureDbUser } from "@/lib/ensure-user";
+import { isPendingUsername } from "@/lib/usernames";
+import { redirect } from "next/navigation";
 import { ReactNode } from "react";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await ensureDbUser();
+
+  if (isPendingUsername(user.username)) {
+    redirect("/onboarding/username");
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-surface-base">

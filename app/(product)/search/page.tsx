@@ -10,6 +10,7 @@ import StatusSelect from "@/components/StatusSelect";
 import AddShowButton from "@/components/AddShowButton";
 import { WatchStatus } from "@/app/generated/prisma/enums";
 import { Prisma } from "@/app/generated/prisma/client";
+import { PENDING_USERNAME_PREFIX } from "@/lib/usernames";
 
 interface SearchPageProps {
   searchParams: Promise<{ q?: string }>;
@@ -49,7 +50,7 @@ function buildUserSearchWhere(query: string): Prisma.UserWhereInput {
   }
 
   return {
-    username: { not: null },
+    NOT: { username: { startsWith: PENDING_USERNAME_PREFIX } },
     OR: wholeQueryMatches,
   };
 }

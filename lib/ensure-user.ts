@@ -1,5 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import { createPendingUsername } from "@/lib/usernames";
 
 export const ensureDbUser = async () => {
   const { userId } = await auth();
@@ -32,6 +33,7 @@ export const ensureDbUser = async () => {
     return await prisma.user.create({
       data: {
         authUserId: userId,
+        username: createPendingUsername(userId),
         firstName: clerkUser?.firstName || "Friend",
         lastName: clerkUser?.lastName || "",
       },

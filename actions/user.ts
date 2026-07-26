@@ -2,20 +2,21 @@
 
 import prisma from "@/lib/prisma";
 import { ensureDbUser } from "@/lib/ensure-user";
+import { normalizeUsername, validateUsername } from "@/lib/usernames";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function updateUsername(formData: FormData) {
   const dbUser = await ensureDbUser();
-  const rawUsername = formData.get("username") as string;
+  const rawUsername = formData.get("username");
+  const redirectTo = formData.get("redirectTo");
+  const cleanUsername = normalizeUsername(rawUsername);
+  const validationError = validateUsername(cleanUsername);
 
-  if (!rawUsername || rawUsername.length < 3) {
-    return { error: "Username must be at least 3 characters." };
+  if (validationError) {
+    return { error: validationError };
   }
-
-  // Force usernames to be lowercase and remove spaces for clean URLs
-  const cleanUsername = rawUsername.toLowerCase().replace(/\s+/g, "");
 
   try {
     await prisma.user.update({
@@ -25,7 +26,6 @@ export async function updateUsername(formData: FormData) {
 
     revalidatePath("/settings");
     revalidatePath("/dashboard");
-    return { success: true, message: "Username updated successfully!" };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.code === "P2002") {
@@ -33,6 +33,12 @@ export async function updateUsername(formData: FormData) {
     }
     return { error: "Something went wrong. Please try again." };
   }
+
+  if (redirectTo === "/dashboard") {
+    redirect("/dashboard");
+  }
+
+  return { success: true, message: "Username updated successfully!" };
 }
 
 export async function deleteAccount(formData: FormData) {

@@ -1,13 +1,19 @@
 "use client";
 
 import { updateUsername } from "@/actions/user";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function UsernameForm({
   initialUsername,
+  redirectTo,
+  submitLabel = "Save Username",
 }: {
-  initialUsername: string | null;
+  initialUsername?: string | null;
+  redirectTo?: string;
+  submitLabel?: string;
 }) {
+  const router = useRouter();
   const [status, setStatus] = useState<{
     type: "success" | "error";
     message: string;
@@ -24,6 +30,9 @@ export default function UsernameForm({
       setStatus({ type: "error", message: result.error });
     } else if (result?.success) {
       setStatus({ type: "success", message: result.message });
+      if (redirectTo) {
+        router.replace(redirectTo);
+      }
     }
 
     setIsPending(false);
@@ -31,6 +40,7 @@ export default function UsernameForm({
 
   return (
     <form action={handleSubmit} className="flex flex-col gap-4">
+      {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
       <div>
         <label
           htmlFor="username"
@@ -48,6 +58,9 @@ export default function UsernameForm({
             name="username"
             defaultValue={initialUsername || ""}
             placeholder="yourname"
+            minLength={3}
+            maxLength={24}
+            pattern="[A-Za-z0-9_]+"
             className="w-full bg-surface-base border border-surface-border text-white text-sm rounded-lg focus:ring-brand-primary focus:border-brand-primary block pl-28 p-2.5 outline-none transition-all"
             required
           />
@@ -71,7 +84,7 @@ export default function UsernameForm({
         disabled={isPending}
         className="cursor-pointer w-full px-4 py-2 text-sm font-bold text-black bg-brand-primary rounded-lg hover:bg-brand-primary-hover transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isPending ? "Saving..." : "Save Username"}
+        {isPending ? "Saving..." : submitLabel}
       </button>
     </form>
   );
