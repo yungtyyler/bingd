@@ -116,7 +116,8 @@ async function main() {
       ok:
         response.ok &&
         text.includes("/sitemap.xml") &&
-        text.includes("Disallow: /api/"),
+        text.includes("Disallow: /api/") &&
+        !text.includes("Disallow: /shows"),
       detail: `HTTP ${response.status}`,
     };
   });
@@ -151,6 +152,19 @@ async function main() {
         contentType.includes("image/png") &&
         bytes.byteLength > 1000,
       detail: `HTTP ${response.status}, type=${contentType}, bytes=${bytes.byteLength}`,
+    };
+  });
+
+  await addCheck("public show page", async () => {
+    const { response, text } = await readText("/shows/82");
+    const hasTitle = text.includes("Game of Thrones");
+    const hasCanonical = text.includes(
+      `rel="canonical" href="${baseAddress}/shows/82"`,
+    );
+
+    return {
+      ok: response.ok && hasTitle && hasCanonical,
+      detail: `HTTP ${response.status}, title=${hasTitle}, canonical=${hasCanonical}`,
     };
   });
 
