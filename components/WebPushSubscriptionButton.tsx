@@ -79,7 +79,10 @@ export default function WebPushSubscriptionButton() {
       const response = await fetch("/api/push-subscriptions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(subscription.toJSON()),
+        body: JSON.stringify({
+          ...subscription.toJSON(),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
       });
 
       if (!response.ok) {

@@ -9,11 +9,27 @@ import { NextRequest, NextResponse } from "next/server";
 
 type WebPushSubscriptionBody = {
   endpoint?: unknown;
+  timezone?: unknown;
   keys?: {
     p256dh?: unknown;
     auth?: unknown;
   };
 };
+
+function normalizeTimezone(timezone: unknown) {
+  if (typeof timezone !== "string" || timezone.trim().length === 0) {
+    return null;
+  }
+
+  const value = timezone.trim();
+
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: value });
+    return value;
+  } catch {
+    return null;
+  }
+}
 
 async function getDbUserOrUnauthorized() {
   try {
@@ -37,6 +53,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = (await request.json()) as WebPushSubscriptionBody;
+  const timezone = normalizeTimezone(body.timezone);
 
   if (
     typeof body.endpoint !== "string" ||
@@ -78,8 +95,15 @@ export async function POST(request: NextRequest) {
 
   await prisma.notificationPreference.upsert({
     where: { userId: dbUser.id },
-    update: { pushEnabled: true },
-    create: { userId: dbUser.id, pushEnabled: true },
+    update: {
+      pushEnabled: true,
+      ...(timezone ? { timezone } : {}),
+    },
+    create: {
+      userId: dbUser.id,
+      pushEnabled: true,
+      timezone,
+    },
   });
 
   return NextResponse.json({ success: true });
