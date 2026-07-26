@@ -16,6 +16,20 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
+const fallbackTimezone = "America/Los_Angeles";
+
+function getSafeTimezone(timezone: string | null) {
+  if (!timezone) {
+    return { timezone: fallbackTimezone, usedFallback: false };
+  }
+
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: timezone });
+    return { timezone, usedFallback: false };
+  } catch {
+    return { timezone: fallbackTimezone, usedFallback: true };
+  }
+}
 
 function getDateKey(date: Date, timezone: string) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -166,6 +180,7 @@ export async function GET(request: NextRequest) {
     preferenceDisabled: 0,
     dryRun: 0,
     duplicate: 0,
+    invalidTimezone: 0,
   };
 
   for (const trackedShow of trackedShows) {
@@ -184,7 +199,12 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    const timezone = preferences.timezone || "America/Los_Angeles";
+    const { timezone, usedFallback } = getSafeTimezone(preferences.timezone);
+
+    if (usedFallback) {
+      skipped.invalidTimezone++;
+    }
+
     const type = getNotificationType({
       isAiringTonight: isSameLocalDay(nextEpisodeDate, now, timezone),
       isNewSeason: show.nextEpisodeNumber === 1,
