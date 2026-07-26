@@ -2,7 +2,9 @@
 
 import prisma from "@/lib/prisma";
 import { ensureDbUser } from "@/lib/ensure-user";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export async function updateUsername(formData: FormData) {
   const dbUser = await ensureDbUser();
@@ -31,4 +33,38 @@ export async function updateUsername(formData: FormData) {
     }
     return { error: "Something went wrong. Please try again." };
   }
+}
+
+export async function deleteAccount(formData: FormData) {
+  const confirmation = formData.get("confirmation");
+  const { userId } = await auth();
+
+  if (!userId) {
+    return { error: "You must be signed in to delete your account." };
+  }
+
+  if (confirmation !== "DELETE") {
+    return { error: "Type DELETE to confirm account deletion." };
+  }
+
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { authUserId: userId },
+      select: { id: true },
+    });
+
+    if (dbUser) {
+      await prisma.user.delete({
+        where: { id: dbUser.id },
+      });
+    }
+
+    const client = await clerkClient();
+    await client.users.deleteUser(userId);
+  } catch (error) {
+    console.error("Failed to delete account:", error);
+    return { error: "Could not delete your account. Please try again." };
+  }
+
+  redirect("/");
 }

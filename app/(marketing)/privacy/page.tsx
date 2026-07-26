@@ -29,6 +29,12 @@ const PrivacyPage = () => {
           provider (e.g., Google or Apple). We also store data related to the TV
           shows you track to provide our core service.
         </p>
+        <p>
+          If you enable notifications, we store your notification preferences,
+          browser or device push subscription details, delivery attempts, and
+          related technical data such as user agent and failure counts. We use
+          this data only to deliver and maintain show alerts.
+        </p>
 
         <h2 className="text-xl font-bold text-white mt-8 mb-4">
           2. How We Use Your Information
@@ -39,9 +45,30 @@ const PrivacyPage = () => {
           history to third-party advertisers.
         </p>
 
+        <h2 className="text-xl font-bold text-white mt-8 mb-4">
+          3. Account Deletion
+        </h2>
+        <p>
+          You can delete your account from Settings. Deleting your account
+          removes your bingd profile, watch library, follows, notification
+          preferences, push subscriptions, and alert history from our active
+          application database. Some records may remain temporarily in backups
+          or infrastructure logs until they expire through normal retention
+          cycles.
+        </p>
+
+        <h2 className="text-xl font-bold text-white mt-8 mb-4">
+          4. Third-Party Services
+        </h2>
+        <p>
+          bingd uses service providers for authentication, hosting, database
+          storage, and show metadata. These providers process data as needed to
+          operate the service.
+        </p>
+
         {/* Add more standard privacy clauses as needed */}
         <p className="pt-8 text-xs text-gray-500 italic">
-          Note: This is a placeholder Privacy Policy for the beta launch.
+          Note: This policy should be reviewed before a full public launch.
         </p>
       </div>
     </div>

@@ -61,8 +61,27 @@ const TermsPage = () => {
           during this beta period.
         </p>
 
+        <h2 className="text-xl font-bold text-white mt-8 mb-4">
+          5. Notifications
+        </h2>
+        <p>
+          If you enable push notifications, bingd may send alerts about shows
+          in your library, including upcoming episodes and new seasons.
+          Notification timing depends on third-party metadata, device settings,
+          browser support, and operating system delivery behavior.
+        </p>
+
+        <h2 className="text-xl font-bold text-white mt-8 mb-4">
+          6. Account Deletion
+        </h2>
+        <p>
+          You may delete your account from Settings. Account deletion removes
+          your bingd account data from the active application database and
+          deletes your authentication account.
+        </p>
+
         <p className="pt-8 text-xs text-gray-500 italic">
-          Note: This is a placeholder Terms of Service for the beta launch.
+          Note: These terms should be reviewed before a full public launch.
         </p>
       </div>
     </div>

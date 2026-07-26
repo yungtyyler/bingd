@@ -2,6 +2,7 @@ import { UserProfile } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { ensureDbUser } from "@/lib/ensure-user";
 import prisma from "@/lib/prisma";
+import DeleteAccountSection from "@/components/DeleteAccountSection";
 import NotificationHistory from "@/components/NotificationHistory";
 import NotificationPreferencesForm from "@/components/NotificationPreferencesForm";
 import UsernameForm from "@/components/UsernameForm";
@@ -75,6 +76,7 @@ export default async function SettingsPage() {
           </section>
 
           <NotificationHistory logs={notificationLogs} />
+          <DeleteAccountSection />
         </div>
 
         <div className="lg:col-span-2 flex justify-center lg:justify-start">
