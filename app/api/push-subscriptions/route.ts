@@ -15,16 +15,25 @@ type WebPushSubscriptionBody = {
   };
 };
 
-export async function POST(request: NextRequest) {
-  let dbUser;
-
+async function getDbUserOrUnauthorized() {
   try {
-    dbUser = await ensureDbUser();
+    return { dbUser: await ensureDbUser(), response: null };
   } catch {
-    return NextResponse.json(
-      { success: false, error: "Unauthorized" },
-      { status: 401 },
-    );
+    return {
+      dbUser: null,
+      response: NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      ),
+    };
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const { dbUser, response } = await getDbUserOrUnauthorized();
+
+  if (!dbUser) {
+    return response;
   }
 
   const body = (await request.json()) as WebPushSubscriptionBody;
@@ -71,6 +80,36 @@ export async function POST(request: NextRequest) {
     where: { userId: dbUser.id },
     update: { pushEnabled: true },
     create: { userId: dbUser.id, pushEnabled: true },
+  });
+
+  return NextResponse.json({ success: true });
+}
+
+export async function DELETE(request: NextRequest) {
+  const { dbUser, response } = await getDbUserOrUnauthorized();
+
+  if (!dbUser) {
+    return response;
+  }
+
+  const body = (await request.json()) as { endpoint?: unknown };
+
+  if (typeof body.endpoint !== "string") {
+    return NextResponse.json(
+      { success: false, error: "Invalid push subscription." },
+      { status: 400 },
+    );
+  }
+
+  await prisma.pushSubscription.updateMany({
+    where: {
+      userId: dbUser.id,
+      endpoint: body.endpoint,
+    },
+    data: {
+      status: PushSubscriptionStatus.DISABLED,
+      disabledAt: new Date(),
+    },
   });
 
   return NextResponse.json({ success: true });
