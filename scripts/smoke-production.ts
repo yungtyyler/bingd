@@ -111,6 +111,27 @@ async function main() {
     };
   });
 
+  await addCheck("offline page", async () => {
+    const { response, text } = await readText("/offline");
+
+    return {
+      ok: response.ok && text.includes("You are offline"),
+      detail: `HTTP ${response.status}`,
+    };
+  });
+
+  await addCheck("service worker", async () => {
+    const { response, text } = await readText("/sw.js");
+
+    return {
+      ok:
+        response.ok &&
+        text.includes("bingd-app-v1") &&
+        text.includes("showNotification"),
+      detail: `HTTP ${response.status}`,
+    };
+  });
+
   await addCheck("health", async () => {
     const { response, json } = await readJson("/api/health");
     const result = json as { success?: boolean; status?: string };
