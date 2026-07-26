@@ -16,7 +16,11 @@ export async function GET() {
 
       const networkName =
         tvmazeData.network?.name || tvmazeData.webChannel?.name || null;
-      let nextEpisodeDate = null;
+      let nextEpisodeDate: Date | null = null;
+      let nextEpisodeTvmazeId: number | null = null;
+      let nextEpisodeName: string | null = null;
+      let nextEpisodeSeason: number | null = null;
+      let nextEpisodeNumber: number | null = null;
 
       if (tvmazeData._links?.nextepisode?.href) {
         const nextEpRes = await fetch(tvmazeData._links.nextepisode.href);
@@ -25,6 +29,10 @@ export async function GET() {
           nextEpisodeDate = nextEpData.airstamp
             ? new Date(nextEpData.airstamp)
             : null;
+          nextEpisodeTvmazeId = nextEpData.id ?? null;
+          nextEpisodeName = nextEpData.name ?? null;
+          nextEpisodeSeason = nextEpData.season ?? null;
+          nextEpisodeNumber = nextEpData.number ?? null;
         }
       }
 
@@ -33,7 +41,11 @@ export async function GET() {
         data: {
           status: tvmazeData.status || null,
           network: networkName,
-          nextEpisodeDate: nextEpisodeDate,
+          nextEpisodeDate,
+          nextEpisodeTvmazeId,
+          nextEpisodeName,
+          nextEpisodeSeason,
+          nextEpisodeNumber,
         },
       });
 

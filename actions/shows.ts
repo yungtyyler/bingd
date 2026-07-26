@@ -87,7 +87,11 @@ export async function addShow(show: ShowSnippet) {
 
   let networkName = null;
   let showStatus = null;
-  let nextEpisodeDate = null;
+  let nextEpisodeDate: Date | null = null;
+  let nextEpisodeTvmazeId: number | null = null;
+  let nextEpisodeName: string | null = null;
+  let nextEpisodeSeason: number | null = null;
+  let nextEpisodeNumber: number | null = null;
 
   try {
     const res = await fetch(`https://api.tvmaze.com/shows/${show.tvmazeId}`);
@@ -105,6 +109,10 @@ export async function addShow(show: ShowSnippet) {
           nextEpisodeDate = nextEpData.airstamp
             ? new Date(nextEpData.airstamp)
             : null;
+          nextEpisodeTvmazeId = nextEpData.id ?? null;
+          nextEpisodeName = nextEpData.name ?? null;
+          nextEpisodeSeason = nextEpData.season ?? null;
+          nextEpisodeNumber = nextEpData.number ?? null;
         }
       }
     }
@@ -119,7 +127,11 @@ export async function addShow(show: ShowSnippet) {
       imageUrl: show.imageUrl ?? null,
       status: showStatus,
       network: networkName,
-      nextEpisodeDate: nextEpisodeDate,
+      nextEpisodeDate,
+      nextEpisodeTvmazeId,
+      nextEpisodeName,
+      nextEpisodeSeason,
+      nextEpisodeNumber,
     },
     create: {
       tvmazeId: show.tvmazeId,
@@ -127,7 +139,11 @@ export async function addShow(show: ShowSnippet) {
       imageUrl: show.imageUrl ?? null,
       status: showStatus,
       network: networkName,
-      nextEpisodeDate: nextEpisodeDate,
+      nextEpisodeDate,
+      nextEpisodeTvmazeId,
+      nextEpisodeName,
+      nextEpisodeSeason,
+      nextEpisodeNumber,
     },
     select: { id: true },
   });

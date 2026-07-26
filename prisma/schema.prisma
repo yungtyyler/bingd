@@ -20,6 +20,37 @@ enum WatchStatus {
   DROPPED
 }
 
+enum PushPlatform {
+  WEB
+  IOS
+  ANDROID
+}
+
+enum PushProvider {
+  WEB_PUSH
+  APNS
+  FCM
+}
+
+enum PushSubscriptionStatus {
+  ACTIVE
+  DISABLED
+  EXPIRED
+}
+
+enum NotificationType {
+  AIRING_TONIGHT
+  AIRING_THIS_WEEK
+  NEW_SEASON_THIS_WEEK
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
 model User {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -31,6 +62,10 @@ model User {
   lastName   String?
 
   profileImageUrl String?
+
+  pushSubscriptions      PushSubscription[]
+  notificationPreference NotificationPreference?
+  notificationLogs       NotificationLog[]
 
   shows     UserShow[]
   followers Follows[]  @relation("following")
@@ -58,13 +93,20 @@ model Show {
   name     String
   imageUrl String?
 
-  status          String?
-  network         String?
-  nextEpisodeDate DateTime?
+  status              String?
+  network             String?
+  nextEpisodeDate     DateTime?
+  nextEpisodeTvmazeId Int?
+  nextEpisodeName     String?
+  nextEpisodeSeason   Int?
+  nextEpisodeNumber   Int?
+
+  notificationLogs NotificationLog[]
 
   users UserShow[]
 
   @@index([name])
+  @@index([nextEpisodeDate])
 }
 
 model UserShow {
@@ -83,4 +125,78 @@ model UserShow {
   @@unique([userId, showId])
   @@index([userId])
   @@index([status])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  platform PushPlatform
+  provider PushProvider
+  status   PushSubscriptionStatus @default(ACTIVE)
+
+  endpoint String? @unique
+  token    String? @unique
+
+  p256dh String?
+  auth   String?
+
+  userAgent    String?
+  deviceName   String?
+  lastSeenAt   DateTime?
+  disabledAt   DateTime?
+  failureCount Int       @default(0)
+
+  @@index([userId])
+  @@index([status])
+  @@index([platform])
+}
+
+model NotificationPreference {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  pushEnabled Boolean @default(false)
+
+  airingTonightEnabled     Boolean @default(true)
+  airingThisWeekEnabled    Boolean @default(true)
+  newSeasonThisWeekEnabled Boolean @default(true)
+
+  timezone String?
+}
+
+model NotificationLog {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  showId String
+  show   Show   @relation(fields: [showId], references: [id], onDelete: Cascade)
+
+  type   NotificationType
+  status NotificationStatus @default(PENDING)
+
+  eventKey      String
+  scheduledFor  DateTime?
+  sentAt        DateTime?
+  failedAt      DateTime?
+  failureReason String?
+
+  @@unique([userId, showId, type, eventKey])
+  @@index([userId])
+  @@index([showId])
+  @@index([type])
+  @@index([status])
+  @@index([scheduledFor])
 }
