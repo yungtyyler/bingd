@@ -107,6 +107,15 @@ async function main() {
     };
   });
 
+  await addCheck("daily cron rejects anonymous", async () => {
+    const { response } = await readJson("/api/cron/daily?dryRun=true");
+
+    return {
+      ok: response.status === 401,
+      detail: `HTTP ${response.status}`,
+    };
+  });
+
   if (cronSecret) {
     await addCheck("notification dry run", async () => {
       const { response, json } = await readJson(
@@ -132,9 +141,40 @@ async function main() {
         }`,
       };
     });
+
+    await addCheck("daily cron dry run", async () => {
+      const { response, json } = await readJson("/api/cron/daily?dryRun=true", {
+        headers: {
+          authorization: `Bearer ${cronSecret}`,
+        },
+      });
+      const result = json as {
+        success?: boolean;
+        dryRun?: boolean;
+        sync?: { skipped?: boolean };
+        notifications?: { status?: number };
+      };
+
+      return {
+        ok:
+          response.ok &&
+          result.success === true &&
+          result.dryRun === true &&
+          result.sync?.skipped === true &&
+          result.notifications?.status === 200,
+        detail: `HTTP ${response.status}, notificationStatus=${
+          result.notifications?.status ?? "?"
+        }`,
+      };
+    });
   } else {
     checks.push({
       name: "notification dry run",
+      ok: false,
+      detail: "CRON_SECRET is missing.",
+    });
+    checks.push({
+      name: "daily cron dry run",
       ok: false,
       detail: "CRON_SECRET is missing.",
     });
