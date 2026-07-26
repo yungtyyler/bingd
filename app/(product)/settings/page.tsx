@@ -1,12 +1,29 @@
 import { UserProfile } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { ensureDbUser } from "@/lib/ensure-user";
+import prisma from "@/lib/prisma";
+import NotificationPreferencesForm from "@/components/NotificationPreferencesForm";
 import UsernameForm from "@/components/UsernameForm";
 
 export const metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
   const dbUser = await ensureDbUser();
+  const notificationPreference =
+    await prisma.notificationPreference.findUnique({
+      where: { userId: dbUser.id },
+    });
+
+  const notificationPreferences = {
+    pushEnabled: notificationPreference?.pushEnabled ?? false,
+    airingTonightEnabled:
+      notificationPreference?.airingTonightEnabled ?? true,
+    airingThisWeekEnabled:
+      notificationPreference?.airingThisWeekEnabled ?? true,
+    newSeasonThisWeekEnabled:
+      notificationPreference?.newSeasonThisWeekEnabled ?? true,
+    timezone: notificationPreference?.timezone ?? null,
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-10 sm:space-y-12 sm:p-8">
@@ -30,6 +47,19 @@ export default async function SettingsPage() {
             </p>
 
             <UsernameForm initialUsername={dbUser.username} />
+          </section>
+
+          <section className="bg-surface-card border border-surface-border p-6 rounded-xl shadow-sm">
+            <h2 className="text-xl font-bold text-white mb-2">
+              Notifications
+            </h2>
+            <p className="text-sm text-gray-400 mb-6">
+              Choose which show alerts belong on this account.
+            </p>
+
+            <NotificationPreferencesForm
+              preferences={notificationPreferences}
+            />
           </section>
         </div>
 
