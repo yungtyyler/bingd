@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { SITE_URL, SITE_URL_OBJECT } from "@/lib/site-url";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,9 +16,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const BASE_ADDRESS = process.env.BASE_ADDRESS;
-
 export const metadata: Metadata = {
+  metadataBase: SITE_URL_OBJECT,
   applicationName: "bingd.",
   title: {
     template: "%s | bingd.",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "bingd.",
     description: "The ultimate TV tracking companion.",
-    url: `${BASE_ADDRESS}`,
+    url: SITE_URL,
     siteName: "bingd.",
     images: [
       {

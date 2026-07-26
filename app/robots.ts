@@ -1,6 +1,5 @@
 import { MetadataRoute } from "next";
-
-const BASE_ADDRESS = process.env.BASE_ADDRESS;
+import { SITE_URL } from "@/lib/site-url";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -9,6 +8,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/dashboard", "/library", "/search", "/shows/*"],
     },
-    sitemap: `${BASE_ADDRESS}/sitemap.xml`,
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

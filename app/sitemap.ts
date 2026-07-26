@@ -1,11 +1,10 @@
 import { MetadataRoute } from "next";
-
-const BASE_ADDRESS = process.env.BASE_ADDRESS;
+import { SITE_URL } from "@/lib/site-url";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
-      url: `${BASE_ADDRESS}`,
+      url: SITE_URL,
       lastModified: new Date(),
       changeFrequency: "yearly",
       priority: 1.0,
