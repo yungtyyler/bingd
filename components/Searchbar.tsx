@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDebouncedCallback } from "use-debounce";
 
 interface SearchbarProps {
@@ -12,34 +12,39 @@ const Searchbar = ({ variant = "page" }: SearchbarProps) => {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { push, replace } = useRouter();
+  const urlQuery =
+    variant === "page" ? searchParams.get("q")?.toString() || "" : "";
+  const isEditingRef = useRef(false);
 
   const [searchTerm, setSearchTerm] = useState(
-    variant === "page" ? searchParams.get("q")?.toString() || "" : "",
+    variant === "page" ? urlQuery : "",
   );
 
   useEffect(() => {
-    if (variant === "page") {
-      const urlQuery = searchParams.get("q")?.toString() || "";
-
+    if (variant === "page" && !isEditingRef.current) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearchTerm((prev) => {
         if (prev !== urlQuery) return urlQuery;
         return prev;
       });
     }
-  }, [searchParams, variant]);
+  }, [urlQuery, variant]);
 
   const handleDebouncedSearch = useDebouncedCallback((term: string) => {
     if (variant !== "page") return;
 
     const params = new URLSearchParams(searchParams);
-    if (term) {
-      params.set("q", term);
+    const cleanTerm = term.trim();
+    if (cleanTerm) {
+      params.set("q", cleanTerm);
     } else {
       params.delete("q");
     }
-    replace(`${pathname}?${params.toString()}`);
-  }, 150);
+    const queryString = params.toString();
+    replace(queryString ? `${pathname}?${queryString}` : pathname, {
+      scroll: false,
+    });
+  }, 400);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -73,6 +78,13 @@ const Searchbar = ({ variant = "page" }: SearchbarProps) => {
         type="text"
         value={searchTerm}
         onChange={handleChange}
+        onFocus={() => {
+          isEditingRef.current = true;
+        }}
+        onBlur={() => {
+          isEditingRef.current = false;
+          handleDebouncedSearch.flush();
+        }}
         placeholder="Search shows or people..."
         className="w-full h-10 rounded-full bg-surface-base border border-surface-border px-4 py-2 text-sm text-white placeholder:text-gray-500 focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary transition-all shadow-sm"
       />
