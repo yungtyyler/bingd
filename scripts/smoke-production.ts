@@ -102,6 +102,15 @@ async function main() {
     };
   });
 
+  await addCheck("not found page", async () => {
+    const { response, text } = await readText("/__smoke_missing_page__");
+
+    return {
+      ok: response.status === 404 && text.includes("Page Not Found"),
+      detail: `HTTP ${response.status}`,
+    };
+  });
+
   await addCheck("send notifications rejects anonymous", async () => {
     const { response } = await readJson(
       "/api/send-notifications?dryRun=true",
