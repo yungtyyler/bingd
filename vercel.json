@@ -4,6 +4,10 @@
     {
       "path": "/api/sync-shows",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/send-notifications",
+      "schedule": "0 16,23 * * *"
     }
   ]
 }

@@ -16,7 +16,17 @@ type WebPushSubscriptionBody = {
 };
 
 export async function POST(request: NextRequest) {
-  const dbUser = await ensureDbUser();
+  let dbUser;
+
+  try {
+    dbUser = await ensureDbUser();
+  } catch {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized" },
+      { status: 401 },
+    );
+  }
+
   const body = (await request.json()) as WebPushSubscriptionBody;
 
   if (
@@ -55,6 +65,12 @@ export async function POST(request: NextRequest) {
       userAgent: request.headers.get("user-agent"),
       lastSeenAt: new Date(),
     },
+  });
+
+  await prisma.notificationPreference.upsert({
+    where: { userId: dbUser.id },
+    update: { pushEnabled: true },
+    create: { userId: dbUser.id, pushEnabled: true },
   });
 
   return NextResponse.json({ success: true });
