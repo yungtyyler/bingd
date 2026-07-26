@@ -16,14 +16,26 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["entertainment", "lifestyle"],
     icons: [
       {
-        src: "/green_bingd_logo.png",
-        sizes: "2048x2048",
+        src: "/icons/icon-192.png",
+        sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/green_bingd_logo.png",
-        sizes: "2048x2048",
+        src: "/icons/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/maskable-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      {
+        src: "/icons/maskable-512.png",
+        sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
       },

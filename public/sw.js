@@ -12,8 +12,8 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "bingd.";
   const options = {
     body: payload.body || "A show on your list has an update.",
-    icon: "/green_bingd_logo.png",
-    badge: "/green_bingd_logo.png",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/maskable-192.png",
     data: {
       url: payload.url || "/dashboard",
     },

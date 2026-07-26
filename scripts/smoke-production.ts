@@ -67,13 +67,28 @@ async function main() {
 
   await addCheck("manifest", async () => {
     const { response, json } = await readJson("/manifest.webmanifest");
-    const manifest = json as { name?: string; display?: string };
+    const manifest = json as {
+      name?: string;
+      display?: string;
+      icons?: Array<{ src?: string; sizes?: string; purpose?: string }>;
+    };
+    const hasIcon512 = manifest.icons?.some(
+      (icon) => icon.src === "/icons/icon-512.png" && icon.sizes === "512x512",
+    );
+    const hasMaskable512 = manifest.icons?.some(
+      (icon) =>
+        icon.src === "/icons/maskable-512.png" &&
+        icon.sizes === "512x512" &&
+        icon.purpose === "maskable",
+    );
 
     return {
       ok:
         response.ok &&
         manifest.name === "bingd." &&
-        manifest.display === "standalone",
+        manifest.display === "standalone" &&
+        hasIcon512 === true &&
+        hasMaskable512 === true,
       detail: `HTTP ${response.status}, display=${manifest.display || "missing"}`,
     };
   });
