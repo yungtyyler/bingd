@@ -3,6 +3,7 @@
 import { updateNotificationPreferences } from "@/actions/notifications";
 import { Bell, CalendarClock, CalendarDays, Sparkles } from "lucide-react";
 import { useState } from "react";
+import WebPushSubscriptionButton from "./WebPushSubscriptionButton";
 
 type NotificationPreferenceValues = {
   pushEnabled: boolean;
@@ -117,6 +118,8 @@ export default function NotificationPreferencesForm({
       >
         {isPending ? "Saving..." : "Save Notifications"}
       </button>
+
+      <WebPushSubscriptionButton />
     </form>
   );
 }
