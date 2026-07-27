@@ -30,6 +30,12 @@ CLERK_SECRET_KEY="sk_live_..."
 CRON_SECRET="replace-with-a-long-random-secret"
 ```
 
+Optional for launch SEO:
+
+```bash
+GOOGLE_SITE_VERIFICATION="google-site-verification-code"
+```
+
 ## Notes
 
 - Use the pooled Neon URL for the deployed Next.js app.

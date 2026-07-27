@@ -11,6 +11,7 @@ const rawBaseAddress = (
   process.env.BASE_ADDRESS
 )?.replace(/\/$/, "");
 const cronSecret = process.env.CRON_SECRET;
+const googleSiteVerification = process.env.GOOGLE_SITE_VERIFICATION;
 
 if (!rawBaseAddress) {
   throw new Error("BASE_ADDRESS is required.");
@@ -74,10 +75,33 @@ async function main() {
     const hasDescription = text.includes(
       "Track your shows, build your watchlist",
     );
+    const hasGoogleVerification = googleSiteVerification
+      ? text.includes(
+          `name="google-site-verification" content="${googleSiteVerification}"`,
+        )
+      : true;
 
     return {
-      ok: response.ok && hasCanonical && hasStructuredData && hasDescription,
-      detail: `HTTP ${response.status}, canonical=${hasCanonical}, structuredData=${hasStructuredData}`,
+      ok:
+        response.ok &&
+        hasCanonical &&
+        hasStructuredData &&
+        hasDescription &&
+        hasGoogleVerification,
+      detail: `HTTP ${response.status}, canonical=${hasCanonical}, structuredData=${hasStructuredData}, googleVerification=${hasGoogleVerification}`,
+    };
+  });
+
+  await addCheck("clerk production config", async () => {
+    const { response, text } = await readText("/");
+    const usesLiveKey = text.includes("data-clerk-publishable-key=\"pk_live_");
+    const usesDevInstance =
+      text.includes(".accounts.dev") ||
+      text.includes("data-clerk-publishable-key=\"pk_test_");
+
+    return {
+      ok: response.ok && usesLiveKey && !usesDevInstance,
+      detail: `HTTP ${response.status}, liveKey=${usesLiveKey}, devInstance=${usesDevInstance}`,
     };
   });
 

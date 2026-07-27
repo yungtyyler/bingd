@@ -19,6 +19,7 @@ Use this as the short path from production web beta to TestFlight and store revi
 - Neon production backups and restore windows are enabled.
 - `npm run smoke:production` passes against `https://getbingd.com`.
 - Public SEO metadata, social share image, robots, sitemap, and structured data are live.
+- Google Search Console verification is configured through DNS or `GOOGLE_SITE_VERIFICATION`.
 - `https://getbingd.com/sitemap.xml` is submitted in Google Search Console.
 - Account deletion, privacy policy, terms, support contact, install flow, and push opt-in are available from production.
 
