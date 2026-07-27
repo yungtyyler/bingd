@@ -86,32 +86,60 @@ function getNotificationType({
 
 function getNotificationCopy({
   showName,
-  episodeName,
   type,
+  airTimeLabel,
 }: {
   showName: string;
-  episodeName: string | null;
   type: NotificationType;
+  airTimeLabel: string;
 }) {
-  const episodeSuffix = episodeName ? `: ${episodeName}` : "";
-
   switch (type) {
     case NotificationType.NEW_SEASON_THIS_WEEK:
       return {
-        title: `${showName} starts a new season this week`,
-        body: `A new season is almost here${episodeSuffix}.`,
+        title: `${showName} starts a new season`,
+        body: `New season starts ${airTimeLabel}. Tap to view it in bingd.`,
       };
     case NotificationType.AIRING_TONIGHT:
       return {
         title: `${showName} airs tonight`,
-        body: `A new episode is airing tonight${episodeSuffix}.`,
+        body: `New episode airs ${airTimeLabel}. Tap to view it in bingd.`,
       };
     case NotificationType.AIRING_THIS_WEEK:
       return {
-        title: `${showName} airs this week`,
-        body: `A new episode is coming up${episodeSuffix}.`,
+        title: `${showName} has a new episode this week`,
+        body: `New episode airs ${airTimeLabel}. Tap to view it in bingd.`,
       };
   }
+}
+
+function getAirTimeLabel({
+  date,
+  timezone,
+  isAiringTonight,
+}: {
+  date: Date;
+  timezone: string;
+  isAiringTonight: boolean;
+}) {
+  const time = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).format(date);
+
+  if (isAiringTonight) {
+    return `tonight at ${time}`;
+  }
+
+  const day = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  }).format(date);
+
+  return `${day} at ${time}`;
 }
 
 export async function GET(request: NextRequest) {
@@ -205,8 +233,9 @@ export async function GET(request: NextRequest) {
       skipped.invalidTimezone++;
     }
 
+    const isAiringTonight = isSameLocalDay(nextEpisodeDate, now, timezone);
     const type = getNotificationType({
-      isAiringTonight: isSameLocalDay(nextEpisodeDate, now, timezone),
+      isAiringTonight,
       isNewSeason: show.nextEpisodeNumber === 1,
       preferences,
     });
@@ -219,8 +248,12 @@ export async function GET(request: NextRequest) {
     const eventKey = getEventKey(show);
     const copy = getNotificationCopy({
       showName: show.name,
-      episodeName: show.nextEpisodeName,
       type,
+      airTimeLabel: getAirTimeLabel({
+        date: nextEpisodeDate,
+        timezone,
+        isAiringTonight,
+      }),
     });
     eligibleCount++;
 
