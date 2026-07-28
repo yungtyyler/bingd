@@ -1,10 +1,12 @@
 import {
   NotificationStatus,
   NotificationType,
+  PushProvider,
   PushSubscriptionStatus,
   WatchStatus,
 } from "@/app/generated/prisma/enums";
 import { Prisma } from "@/app/generated/prisma/client";
+import { sendApnsNotification } from "@/lib/apns-push";
 import prisma from "@/lib/prisma";
 import {
   configureWebPush,
@@ -175,9 +177,18 @@ export async function GET(request: NextRequest) {
         pushSubscriptions: {
           some: {
             status: PushSubscriptionStatus.ACTIVE,
-            endpoint: { not: null },
-            p256dh: { not: null },
-            auth: { not: null },
+            OR: [
+              {
+                provider: PushProvider.WEB_PUSH,
+                endpoint: { not: null },
+                p256dh: { not: null },
+                auth: { not: null },
+              },
+              {
+                provider: PushProvider.APNS,
+                token: { not: null },
+              },
+            ],
           },
         },
       },
@@ -190,9 +201,18 @@ export async function GET(request: NextRequest) {
           pushSubscriptions: {
             where: {
               status: PushSubscriptionStatus.ACTIVE,
-              endpoint: { not: null },
-              p256dh: { not: null },
-              auth: { not: null },
+              OR: [
+                {
+                  provider: PushProvider.WEB_PUSH,
+                  endpoint: { not: null },
+                  p256dh: { not: null },
+                  auth: { not: null },
+                },
+                {
+                  provider: PushProvider.APNS,
+                  token: { not: null },
+                },
+              ],
             },
           },
         },
@@ -288,16 +308,19 @@ export async function GET(request: NextRequest) {
     }
 
     const sendResults = await Promise.allSettled(
-      user.pushSubscriptions.map((subscription) =>
-        sendWebPushNotification({
-          subscription,
-          payload: {
-            title: copy.title,
-            body: copy.body,
-            url: `/shows/${show.tvmazeId}`,
-          },
-        }),
-      ),
+      user.pushSubscriptions.map((subscription) => {
+        const payload = {
+          title: copy.title,
+          body: copy.body,
+          url: `/shows/${show.tvmazeId}`,
+        };
+
+        if (subscription.provider === PushProvider.APNS) {
+          return sendApnsNotification({ subscription, payload });
+        }
+
+        return sendWebPushNotification({ subscription, payload });
+      }),
     );
 
     const successfulSends = sendResults.filter(

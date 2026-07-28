@@ -6,6 +6,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { SITE_URL, SITE_URL_OBJECT } from "@/lib/site-url";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import NativeNotificationBridge from "@/components/NativeNotificationBridge";
 import {
   DEFAULT_SEO_DESCRIPTION,
   DEFAULT_SEO_TITLE,
@@ -110,6 +111,7 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <ServiceWorkerRegistration />
+          <NativeNotificationBridge />
           <Toaster position="bottom-right" richColors />
           {children}
         </body>

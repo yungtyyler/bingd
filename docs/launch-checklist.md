@@ -32,8 +32,15 @@ Use this as the short path from production web beta to TestFlight and store revi
 - [ ] Configure Apple Developer signing for `com.getbingd.app`.
 - [x] Add Capacitor native push plugin and iOS APNs registration hooks.
 - [x] Register native APNs/FCM device tokens with the existing notification subscription model.
-- [ ] Implement native push provider sending for APNs and FCM without replacing the existing web push flow.
-- [ ] Add native handling for notification deep links back into show, library, or settings screens.
+- [x] Implement APNs native push provider sending without replacing the existing web push flow.
+- [ ] Add APNs credentials to Vercel after Apple Developer approval:
+  - `APNS_KEY_ID`
+  - `APNS_TEAM_ID`
+  - `APNS_PRIVATE_KEY`
+  - `APNS_BUNDLE_ID=com.getbingd.app`
+  - `APNS_ENVIRONMENT=production`
+- [ ] Implement Android FCM native push provider sending.
+- [x] Add native handling for notification deep links back into show, library, or settings screens.
 - [ ] Build and upload the first internal TestFlight build.
 
 ## Store Readiness
