@@ -16,6 +16,31 @@ type WebPushSubscriptionBody = {
   };
 };
 
+type NativePushSubscriptionBody = {
+  token?: unknown;
+  platform?: unknown;
+  timezone?: unknown;
+  deviceName?: unknown;
+};
+
+function normalizeNativePlatform(platform: unknown) {
+  if (platform === "IOS") {
+    return {
+      platform: PushPlatform.IOS,
+      provider: PushProvider.APNS,
+    };
+  }
+
+  if (platform === "ANDROID") {
+    return {
+      platform: PushPlatform.ANDROID,
+      provider: PushProvider.FCM,
+    };
+  }
+
+  return null;
+}
+
 function normalizeTimezone(timezone: unknown) {
   if (typeof timezone !== "string" || timezone.trim().length === 0) {
     return null;
@@ -52,8 +77,66 @@ export async function POST(request: NextRequest) {
     return response;
   }
 
-  const body = (await request.json()) as WebPushSubscriptionBody;
+  const body = (await request.json()) as WebPushSubscriptionBody &
+    NativePushSubscriptionBody;
   const timezone = normalizeTimezone(body.timezone);
+
+  if ("token" in body || "platform" in body) {
+    const nativeTarget = normalizeNativePlatform(body.platform);
+
+    if (
+      !nativeTarget ||
+      typeof body.token !== "string" ||
+      body.token.trim().length === 0
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Invalid native push subscription." },
+        { status: 400 },
+      );
+    }
+
+    await prisma.pushSubscription.upsert({
+      where: { token: body.token },
+      update: {
+        userId: dbUser.id,
+        platform: nativeTarget.platform,
+        provider: nativeTarget.provider,
+        status: PushSubscriptionStatus.ACTIVE,
+        userAgent: request.headers.get("user-agent"),
+        deviceName:
+          typeof body.deviceName === "string" ? body.deviceName.trim() : null,
+        lastSeenAt: new Date(),
+        disabledAt: null,
+        failureCount: 0,
+      },
+      create: {
+        userId: dbUser.id,
+        platform: nativeTarget.platform,
+        provider: nativeTarget.provider,
+        status: PushSubscriptionStatus.ACTIVE,
+        token: body.token,
+        userAgent: request.headers.get("user-agent"),
+        deviceName:
+          typeof body.deviceName === "string" ? body.deviceName.trim() : null,
+        lastSeenAt: new Date(),
+      },
+    });
+
+    await prisma.notificationPreference.upsert({
+      where: { userId: dbUser.id },
+      update: {
+        pushEnabled: true,
+        ...(timezone ? { timezone } : {}),
+      },
+      create: {
+        userId: dbUser.id,
+        pushEnabled: true,
+        timezone,
+      },
+    });
+
+    return NextResponse.json({ success: true });
+  }
 
   if (
     typeof body.endpoint !== "string" ||
@@ -116,9 +199,9 @@ export async function DELETE(request: NextRequest) {
     return response;
   }
 
-  const body = (await request.json()) as { endpoint?: unknown };
+  const body = (await request.json()) as { endpoint?: unknown; token?: unknown };
 
-  if (typeof body.endpoint !== "string") {
+  if (typeof body.endpoint !== "string" && typeof body.token !== "string") {
     return NextResponse.json(
       { success: false, error: "Invalid push subscription." },
       { status: 400 },
@@ -128,7 +211,12 @@ export async function DELETE(request: NextRequest) {
   await prisma.pushSubscription.updateMany({
     where: {
       userId: dbUser.id,
-      endpoint: body.endpoint,
+      OR: [
+        ...(typeof body.endpoint === "string"
+          ? [{ endpoint: body.endpoint }]
+          : []),
+        ...(typeof body.token === "string" ? [{ token: body.token }] : []),
+      ],
     },
     data: {
       status: PushSubscriptionStatus.DISABLED,
