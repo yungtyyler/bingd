@@ -1,3 +1,5 @@
+/// <reference types="@capacitor/push-notifications" />
+
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
@@ -8,7 +10,11 @@ const config: CapacitorConfig = {
     url: "https://getbingd.com",
     cleartext: false,
   },
+  plugins: {
+    PushNotifications: {
+      presentationOptions: ["badge", "sound", "banner", "list"],
+    },
+  },
 };
 
 export default config;
-

@@ -28,8 +28,11 @@ Use this as the short path from production web beta to TestFlight and store revi
 - [ ] Create the Apple Developer account and App Store Connect app record.
 - [x] Choose the native wrapper approach, likely Capacitor around the deployed app.
 - [x] Add initial Capacitor config for the production web wrapper.
-- [ ] Add native app icons, splash screens, bundle id, app display name, and signing.
-- [ ] Implement native push provider support for APNs and FCM without replacing the existing web push flow.
+- [x] Add native app icons, splash screens, bundle id, app display name, and iPhone portrait behavior.
+- [ ] Configure Apple Developer signing for `com.getbingd.app`.
+- [x] Add Capacitor native push plugin and iOS APNs registration hooks.
+- [ ] Register native APNs/FCM device tokens with the existing notification subscription model.
+- [ ] Implement native push provider sending for APNs and FCM without replacing the existing web push flow.
 - [ ] Add native handling for notification deep links back into show, library, or settings screens.
 - [ ] Build and upload the first internal TestFlight build.
 
