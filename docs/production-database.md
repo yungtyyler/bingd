@@ -22,8 +22,8 @@ npx prisma generate
 Required for production:
 
 ```bash
-DATABASE_URL="postgresql://USER:PASSWORD@HOST-pooler.neon.tech/DB?sslmode=require"
-DIRECT_URL="postgresql://USER:PASSWORD@HOST.neon.tech/DB?sslmode=require"
+DATABASE_URL="postgresql://USER:PASSWORD@HOST-pooler.neon.tech/DB?sslmode=verify-full"
+DIRECT_URL="postgresql://USER:PASSWORD@HOST.neon.tech/DB?sslmode=verify-full"
 BASE_ADDRESS="https://getbingd.com"
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_live_..."
 CLERK_SECRET_KEY="sk_live_..."
