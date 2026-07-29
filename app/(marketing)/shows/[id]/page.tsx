@@ -1,6 +1,5 @@
 import AddShowButton from "@/components/AddShowButton";
 import DeleteShowButton from "@/components/DeleteShowButton";
-import NativeAwareAuthButtons from "@/components/NativeAwareAuthButtons";
 import StatusSelect from "@/components/StatusSelect";
 import { WatchStatus } from "@/app/generated/prisma/enums";
 import { ensureDbUser } from "@/lib/ensure-user";
@@ -9,6 +8,7 @@ import { isPendingUsername } from "@/lib/usernames";
 import prisma from "@/lib/prisma";
 import { ShowSnippet } from "@/types";
 import { auth } from "@clerk/nextjs/server";
+import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -216,10 +216,18 @@ const ShowPage = async ({ params }: ShowPageProps) => {
             ) : dbUser ? (
               <AddShowButton show={showSnippet} />
             ) : (
-              <NativeAwareAuthButtons
-                variant="compact"
-                primaryLabel="Add to Library"
-              />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <SignUpButton mode="modal">
+                  <button className="min-h-10 rounded-md bg-brand-primary px-4 py-2 text-sm font-bold text-black transition-colors hover:bg-brand-primary-hover">
+                    Add to Library
+                  </button>
+                </SignUpButton>
+                <SignInButton mode="modal">
+                  <button className="min-h-10 rounded-md border border-surface-border bg-surface-base px-4 py-2 text-sm font-bold text-white transition-colors hover:border-brand-primary/50">
+                    Sign In
+                  </button>
+                </SignInButton>
+              </div>
             )}
           </div>
         </div>
