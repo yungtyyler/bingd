@@ -9,7 +9,7 @@ const Header = () => {
   const isAuthenticated = !!user;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-surface-border bg-surface-base/80 backdrop-blur-md py-2">
+    <header className="sticky top-0 z-50 border-b border-surface-border bg-surface-base/80 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-2 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link

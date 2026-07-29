@@ -1,4 +1,5 @@
 /// <reference types="@capacitor/push-notifications" />
+/// <reference types="@capacitor/status-bar" />
 
 import type { CapacitorConfig } from "@capacitor/cli";
 
@@ -13,6 +14,11 @@ const config: CapacitorConfig = {
   plugins: {
     PushNotifications: {
       presentationOptions: ["badge", "sound", "banner", "list"],
+    },
+    StatusBar: {
+      overlaysWebView: false,
+      backgroundColor: "#000000",
+      style: "DARK",
     },
   },
 };
