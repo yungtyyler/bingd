@@ -12,17 +12,10 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { isAuthenticated, redirectToSignIn } = await auth();
+  const { isAuthenticated } = await auth();
 
   if (!isAuthenticated && isProtectedRoute(req)) {
-    const userAgent = req.headers.get("user-agent") || "";
-
-    if (userAgent.includes("bingd-capacitor")) {
-      return NextResponse.redirect(new URL("/native-sign-in", req.url));
-    }
-
-    console.log("Access Denied. User not logged in.");
-    return redirectToSignIn();
+    return NextResponse.redirect(new URL("/sign-in", req.url));
   }
 });
 

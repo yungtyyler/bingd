@@ -7,6 +7,8 @@ import { FormEvent, useState } from "react";
 
 type NativeEmailAuthFormProps = {
   mode: "sign-in" | "sign-up";
+  signInHref?: string;
+  signUpHref?: string;
 };
 
 type AuthStep = "email" | "code";
@@ -38,7 +40,11 @@ function getErrorMessage(error: unknown) {
   return "Something went wrong. Please try again.";
 }
 
-export default function NativeEmailAuthForm({ mode }: NativeEmailAuthFormProps) {
+export default function NativeEmailAuthForm({
+  mode,
+  signInHref = "/sign-in",
+  signUpHref = "/sign-up",
+}: NativeEmailAuthFormProps) {
   const router = useRouter();
   const {
     isLoaded: isSignInLoaded,
@@ -64,8 +70,7 @@ export default function NativeEmailAuthForm({ mode }: NativeEmailAuthFormProps) 
         ? "Email me a code"
         : "Create account"
       : "Continue";
-  const alternateHref =
-    mode === "sign-in" ? "/native-sign-up" : "/native-sign-in";
+  const alternateHref = mode === "sign-in" ? signUpHref : signInHref;
   const alternateText =
     mode === "sign-in"
       ? "Need an account? Sign up"
