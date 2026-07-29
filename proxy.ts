@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
@@ -14,6 +15,12 @@ export default clerkMiddleware(async (auth, req) => {
   const { isAuthenticated, redirectToSignIn } = await auth();
 
   if (!isAuthenticated && isProtectedRoute(req)) {
+    const userAgent = req.headers.get("user-agent") || "";
+
+    if (userAgent.includes("bingd-capacitor")) {
+      return NextResponse.redirect(new URL("/native-sign-in", req.url));
+    }
+
     console.log("Access Denied. User not logged in.");
     return redirectToSignIn();
   }

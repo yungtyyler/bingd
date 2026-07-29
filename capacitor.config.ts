@@ -6,6 +6,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 const config: CapacitorConfig = {
   appId: "com.getbingd.app",
   appName: "bingd",
+  appendUserAgent: " bingd-capacitor",
   webDir: "public",
   server: {
     url: "https://getbingd.com",
