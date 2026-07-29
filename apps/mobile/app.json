@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "bingd",
+    "slug": "bingd-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "bingd",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "bundleIdentifier": "com.getbingd.app",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.getbingd.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#050805",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "@clerk/expo",
+      "expo-secure-store",
+      "expo-notifications"
+    ]
+  }
+}
