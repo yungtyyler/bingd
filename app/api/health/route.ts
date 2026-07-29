@@ -34,6 +34,11 @@ function getConfigChecks(): HealthCheck[] {
       ok: Boolean(process.env.NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY),
     },
     { name: "webPushPrivateKey", ok: Boolean(process.env.WEB_PUSH_PRIVATE_KEY) },
+    { name: "apnsKeyId", ok: Boolean(process.env.APNS_KEY_ID) },
+    { name: "apnsTeamId", ok: Boolean(process.env.APNS_TEAM_ID) },
+    { name: "apnsPrivateKey", ok: Boolean(process.env.APNS_PRIVATE_KEY) },
+    { name: "apnsBundleId", ok: Boolean(process.env.APNS_BUNDLE_ID) },
+    { name: "apnsEnvironment", ok: Boolean(process.env.APNS_ENVIRONMENT) },
   ];
 }
 

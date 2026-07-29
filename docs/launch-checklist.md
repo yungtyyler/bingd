@@ -29,11 +29,11 @@ Use this as the short path from production web beta to TestFlight and store revi
 - [x] Choose the native wrapper approach, likely Capacitor around the deployed app.
 - [x] Add initial Capacitor config for the production web wrapper.
 - [x] Add native app icons, splash screens, bundle id, app display name, and iPhone portrait behavior.
-- [ ] Configure Apple Developer signing for `com.getbingd.app`.
+- [x] Configure Apple Developer signing and push entitlements for `com.getbingd.app`.
 - [x] Add Capacitor native push plugin and iOS APNs registration hooks.
 - [x] Register native APNs/FCM device tokens with the existing notification subscription model.
 - [x] Implement APNs native push provider sending without replacing the existing web push flow.
-- [ ] Add APNs credentials to Vercel after Apple Developer approval:
+- [x] Add APNs credentials to Vercel after Apple Developer approval:
   - `APNS_KEY_ID`
   - `APNS_TEAM_ID`
   - `APNS_PRIVATE_KEY`
