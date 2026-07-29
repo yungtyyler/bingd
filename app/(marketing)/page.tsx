@@ -1,5 +1,5 @@
-import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { Tv, Sparkles, Users, Bell } from "lucide-react";
+import NativeAwareAuthButtons from "@/components/NativeAwareAuthButtons";
 import StructuredData from "@/components/StructuredData";
 import { absoluteUrl, DEFAULT_SEO_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 
@@ -69,20 +69,7 @@ const HomePage = () => {
           for your TV life.
         </p>
 
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-          <SignUpButton mode="modal">
-            <button className="cursor-pointer w-full sm:w-auto px-8 py-4 text-base font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.5)]">
-              Get Started for Free
-            </button>
-          </SignUpButton>
-
-          <SignInButton mode="modal">
-            <button className="cursor-pointer w-full sm:w-auto px-8 py-4 text-base font-bold text-white bg-surface-border rounded-full hover:bg-gray-800 transition-all">
-              Sign In
-            </button>
-          </SignInButton>
-        </div>
+        <NativeAwareAuthButtons />
       </section>
 
       {/* 2. Feature Grid */}

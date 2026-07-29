@@ -2,9 +2,11 @@
 
 import { useClerk } from "@clerk/nextjs";
 import Link from "next/link";
+import { useIsNativeApp } from "./useIsNativeApp";
 
 const Header = () => {
   const { openSignIn, openSignUp, signOut, user } = useClerk();
+  const isNativeApp = useIsNativeApp();
 
   const isAuthenticated = !!user;
 
@@ -53,19 +55,45 @@ const Header = () => {
             </>
           ) : (
             <>
-              <button
-                onClick={() => openSignIn({ forceRedirectUrl: "/dashboard" })}
-                className="text-sm font-medium text-gray-400 hover:text-white transition-colors cursor-pointer"
-              >
-                Log in
-              </button>
+              {isNativeApp === null ? (
+                <span className="pointer-events-none text-sm font-medium text-gray-400 opacity-0">
+                  Log in
+                </span>
+              ) : isNativeApp ? (
+                <Link
+                  href="/native-sign-in"
+                  className="text-sm font-medium text-gray-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  Log in
+                </Link>
+              ) : (
+                <button
+                  onClick={() => openSignIn({ forceRedirectUrl: "/dashboard" })}
+                  className="text-sm font-medium text-gray-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  Log in
+                </button>
+              )}
 
-              <button
-                onClick={() => openSignUp({ forceRedirectUrl: "/dashboard" })}
-                className="px-4 py-2 text-sm font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] cursor-pointer"
-              >
-                Sign Up
-              </button>
+              {isNativeApp === null ? (
+                <span className="pointer-events-none px-4 py-2 text-sm font-bold opacity-0">
+                  Sign Up
+                </span>
+              ) : isNativeApp ? (
+                <Link
+                  href="/native-sign-up"
+                  className="px-4 py-2 text-sm font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] cursor-pointer"
+                >
+                  Sign Up
+                </Link>
+              ) : (
+                <button
+                  onClick={() => openSignUp({ forceRedirectUrl: "/dashboard" })}
+                  className="px-4 py-2 text-sm font-bold text-black bg-brand-primary rounded-full hover:bg-brand-primary-hover hover:scale-105 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] cursor-pointer"
+                >
+                  Sign Up
+                </button>
+              )}
             </>
           )}
         </nav>
