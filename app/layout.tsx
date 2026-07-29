@@ -24,6 +24,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const clerkAllowedRedirectOrigins = [SITE_URL, "capacitor://localhost"];
+
 export const metadata: Metadata = {
   metadataBase: SITE_URL_OBJECT,
   applicationName: SITE_NAME,
@@ -105,7 +107,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider allowedRedirectOrigins={clerkAllowedRedirectOrigins}>
       <html lang="en">
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
