@@ -1,5 +1,9 @@
-import { PushSubscriptionStatus } from "@/app/generated/prisma/enums";
+import {
+  PushProvider,
+  PushSubscriptionStatus,
+} from "@/app/generated/prisma/enums";
 import { ensureDbUser } from "@/lib/ensure-user";
+import { sendApnsNotification } from "@/lib/apns-push";
 import prisma from "@/lib/prisma";
 import {
   configureWebPush,
@@ -22,15 +26,22 @@ export async function POST() {
     );
   }
 
-  configureWebPush();
-
   const subscriptions = await prisma.pushSubscription.findMany({
     where: {
       userId: dbUser.id,
       status: PushSubscriptionStatus.ACTIVE,
-      endpoint: { not: null },
-      p256dh: { not: null },
-      auth: { not: null },
+      OR: [
+        {
+          provider: PushProvider.WEB_PUSH,
+          endpoint: { not: null },
+          p256dh: { not: null },
+          auth: { not: null },
+        },
+        {
+          provider: PushProvider.APNS,
+          token: { not: null },
+        },
+      ],
     },
   });
 
@@ -41,17 +52,28 @@ export async function POST() {
     );
   }
 
+  if (
+    subscriptions.some(
+      (subscription) => subscription.provider === PushProvider.WEB_PUSH,
+    )
+  ) {
+    configureWebPush();
+  }
+
   const results = await Promise.allSettled(
-    subscriptions.map((subscription) =>
-      sendWebPushNotification({
-        subscription,
-        payload: {
-          title: "bingd. alerts are ready",
-          body: "This device is set up for show notifications.",
-          url: "/settings",
-        },
-      }),
-    ),
+    subscriptions.map((subscription) => {
+      const payload = {
+        title: "bingd. alerts are ready",
+        body: "This device is set up for show notifications.",
+        url: "/settings",
+      };
+
+      if (subscription.provider === PushProvider.APNS) {
+        return sendApnsNotification({ subscription, payload });
+      }
+
+      return sendWebPushNotification({ subscription, payload });
+    }),
   );
 
   const sent = results.filter((result) => result.status === "fulfilled").length;
