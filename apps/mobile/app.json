@@ -3,6 +3,7 @@
     "name": "bingd",
     "slug": "bingd-mobile",
     "version": "1.0.0",
+    "buildNumber": "5",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "bingd",
@@ -24,10 +25,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "@clerk/expo",
-      "expo-secure-store",
-      "expo-notifications"
-    ]
+    "plugins": ["@clerk/expo", "expo-secure-store", "expo-notifications"]
   }
 }
