@@ -3,13 +3,13 @@
     "name": "bingd",
     "slug": "bingd-mobile",
     "version": "1.0.0",
-    "buildNumber": "5",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "bingd",
     "userInterfaceStyle": "dark",
     "ios": {
       "bundleIdentifier": "com.getbingd.app",
+      "buildNumber": "6",
       "supportsTablet": true
     },
     "android": {
