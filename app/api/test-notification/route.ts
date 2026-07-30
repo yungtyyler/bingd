@@ -14,6 +14,15 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+type SendTarget = {
+  provider: PushProvider;
+  send: () => Promise<void>;
+};
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Unknown error";
+}
+
 export async function POST() {
   let dbUser;
 
@@ -60,30 +69,74 @@ export async function POST() {
     configureWebPush();
   }
 
-  const results = await Promise.allSettled(
-    subscriptions.map((subscription) => {
-      const payload = {
-        title: "bingd. alerts are ready",
-        body: "This device is set up for show notifications.",
-        url: "/settings",
+  const payload = {
+    title: "bingd. alerts are ready",
+    body: "This device is set up for show notifications.",
+    url: "/settings",
+  };
+
+  const sendTargets: SendTarget[] = subscriptions.map((subscription) => {
+    if (subscription.provider === PushProvider.APNS) {
+      return {
+        provider: PushProvider.APNS,
+        send: () => sendApnsNotification({ subscription, payload }),
       };
+    }
 
-      if (subscription.provider === PushProvider.APNS) {
-        return sendApnsNotification({ subscription, payload });
-      }
+    return {
+      provider: PushProvider.WEB_PUSH,
+      send: () => sendWebPushNotification({ subscription, payload }),
+    };
+  });
 
-      return sendWebPushNotification({ subscription, payload });
-    }),
+  const results = await Promise.allSettled(
+    sendTargets.map((target) => target.send()),
   );
 
   const sent = results.filter((result) => result.status === "fulfilled").length;
+  const failed = results.length - sent;
+  const byProvider = sendTargets.reduce(
+    (summary, target, index) => {
+      const result = results[index];
+      const providerSummary = summary[target.provider];
+
+      providerSummary.total++;
+
+      if (result.status === "fulfilled") {
+        providerSummary.sent++;
+      } else {
+        providerSummary.failed++;
+        console.error(
+          `[test-notification] ${target.provider} send failed: ${getErrorMessage(result.reason)}`,
+        );
+      }
+
+      return summary;
+    },
+    {
+      [PushProvider.APNS]: { total: 0, sent: 0, failed: 0 },
+      [PushProvider.FCM]: { total: 0, sent: 0, failed: 0 },
+      [PushProvider.WEB_PUSH]: { total: 0, sent: 0, failed: 0 },
+    },
+  );
 
   if (sent === 0) {
     return NextResponse.json(
-      { success: false, error: "Could not send to any active devices." },
+      {
+        success: false,
+        error: "Could not send to any active devices.",
+        sent,
+        failed,
+        byProvider,
+      },
       { status: 500 },
     );
   }
 
-  return NextResponse.json({ success: true, sent });
+  return NextResponse.json({
+    success: true,
+    sent,
+    failed,
+    byProvider,
+  });
 }

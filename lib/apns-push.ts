@@ -19,6 +19,24 @@ type ApnsError = {
 
 let cachedAuthToken: { value: string; issuedAt: number } | null = null;
 
+function normalizePrivateKey(value: string | undefined) {
+  if (!value) {
+    return undefined;
+  }
+
+  const key = value.replace(/\\n/g, "\n").trim();
+
+  if (key.includes("BEGIN PRIVATE KEY")) {
+    return key;
+  }
+
+  return [
+    "-----BEGIN PRIVATE KEY-----",
+    key,
+    "-----END PRIVATE KEY-----",
+  ].join("\n");
+}
+
 function base64Url(value: Buffer | string) {
   return Buffer.from(value)
     .toString("base64")
@@ -30,7 +48,7 @@ function base64Url(value: Buffer | string) {
 function getApnsConfig() {
   const keyId = process.env.APNS_KEY_ID;
   const teamId = process.env.APNS_TEAM_ID;
-  const privateKey = process.env.APNS_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const privateKey = normalizePrivateKey(process.env.APNS_PRIVATE_KEY);
   const bundleId = process.env.APNS_BUNDLE_ID || "com.getbingd.app";
   const environment = process.env.APNS_ENVIRONMENT;
 

@@ -23,6 +23,7 @@ export default function TestNotificationButton() {
       const result = (await response.json()) as {
         success?: boolean;
         sent?: number;
+        failed?: number;
         error?: string;
       };
 
@@ -31,10 +32,14 @@ export default function TestNotificationButton() {
       }
 
       setStatus({
-        type: "success",
-        message: `Sent to ${result.sent || 1} active device${
-          result.sent === 1 ? "" : "s"
-        }.`,
+        type: result.failed ? "error" : "success",
+        message: result.failed
+          ? `Sent to ${result.sent || 0}, but ${result.failed} device${
+              result.failed === 1 ? "" : "s"
+            } failed.`
+          : `Sent to ${result.sent || 1} active device${
+              result.sent === 1 ? "" : "s"
+            }.`,
       });
     } catch (error) {
       setStatus({
