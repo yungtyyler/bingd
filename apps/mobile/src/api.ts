@@ -1,5 +1,5 @@
 import { useAuth } from "@clerk/expo";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 
 const fallbackApiBaseUrl = "https://getbingd.com";
 
@@ -12,13 +12,15 @@ export function getApiBaseUrl() {
 
 export function useBingdApi() {
   const { getToken } = useAuth();
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
 
   return useMemo(() => {
     async function request<T>(
       path: string,
       options: RequestInit = {},
     ): Promise<T> {
-      const token = await getToken();
+      const token = await getTokenRef.current();
       const response = await fetch(`${getApiBaseUrl()}${path}`, {
         ...options,
         headers: {
@@ -52,5 +54,5 @@ export function useBingdApi() {
     }
 
     return { request };
-  }, [getToken]);
+  }, []);
 }

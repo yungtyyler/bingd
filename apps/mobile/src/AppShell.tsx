@@ -1,7 +1,7 @@
 import { useAuth, useUser } from "@clerk/expo";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -49,9 +49,11 @@ function formatDate(value: string | null) {
 function Card({
   entry,
   onStatusChange,
+  isUpdating = false,
 }: {
   entry: LibraryEntry;
   onStatusChange?: (showId: string, status: WatchStatus) => void;
+  isUpdating?: boolean;
 }) {
   if (!entry.show) return null;
 
@@ -85,10 +87,12 @@ function Card({
           {statusOptions.map((status) => (
             <Pressable
               key={status}
+              disabled={isUpdating}
               onPress={() => onStatusChange(entry.showId, status)}
               style={[
                 styles.statusPill,
                 entry.status === status && styles.statusPillActive,
+                isUpdating && styles.statusPillDisabled,
               ]}
             >
               <Text
@@ -263,6 +267,10 @@ function LibraryScreen() {
   const api = useBingdApi();
   const [entries, setEntries] = useState<LibraryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const updatingShowIdsRef = useRef<Set<string>>(new Set());
+  const [updatingShowIds, setUpdatingShowIds] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const load = useCallback(async () => {
     const result = await api.request<{ entries: LibraryEntry[] }>(
@@ -281,15 +289,49 @@ function LibraryScreen() {
   }, [load]);
 
   const updateStatus = async (showId: string, status: WatchStatus) => {
+    if (updatingShowIdsRef.current.has(showId)) return;
+
+    const previousEntry = entries.find((entry) => entry.showId === showId);
+    if (!previousEntry || previousEntry.status === status) return;
+
+    updatingShowIdsRef.current.add(showId);
+    setUpdatingShowIds((current) => {
+      const next = new Set(current);
+      next.add(showId);
+      return next;
+    });
+
     setEntries((current) =>
       current.map((entry) =>
         entry.showId === showId ? { ...entry, status } : entry,
       ),
     );
-    await api.request(`/api/mobile/library/${showId}`, {
-      method: "PATCH",
-      body: JSON.stringify({ status }),
-    });
+
+    try {
+      await api.request(`/api/mobile/library/${showId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+    } catch (caughtError) {
+      setEntries((current) =>
+        current.map((entry) =>
+          entry.showId === showId
+            ? { ...entry, status: previousEntry.status }
+            : entry,
+        ),
+      );
+      Alert.alert(
+        "Could not update status",
+        caughtError instanceof Error ? caughtError.message : "Please try again.",
+      );
+    } finally {
+      updatingShowIdsRef.current.delete(showId);
+      setUpdatingShowIds((current) => {
+        const next = new Set(current);
+        next.delete(showId);
+        return next;
+      });
+    }
   };
 
   if (isLoading) {
@@ -302,7 +344,12 @@ function LibraryScreen() {
       {entries.length > 0 ? (
         <View style={styles.grid}>
           {entries.map((entry) => (
-            <Card key={entry.id} entry={entry} onStatusChange={updateStatus} />
+            <Card
+              key={entry.id}
+              entry={entry}
+              isUpdating={updatingShowIds.has(entry.showId)}
+              onStatusChange={updateStatus}
+            />
           ))}
         </View>
       ) : (
@@ -317,12 +364,17 @@ function SearchScreen({ onAdded }: { onAdded: () => void }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchShow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const searchRequestId = useRef(0);
 
   useEffect(() => {
     const trimmed = query.trim();
     const handle = setTimeout(async () => {
+      const requestId = searchRequestId.current + 1;
+      searchRequestId.current = requestId;
+
       if (trimmed.length < 2) {
         setResults([]);
+        setIsLoading(false);
         return;
       }
 
@@ -331,9 +383,17 @@ function SearchScreen({ onAdded }: { onAdded: () => void }) {
         const response = await api.request<{ shows: SearchShow[] }>(
           `/api/mobile/search?q=${encodeURIComponent(trimmed)}`,
         );
-        setResults(response.shows);
+        if (searchRequestId.current === requestId) {
+          setResults(response.shows);
+        }
+      } catch {
+        if (searchRequestId.current === requestId) {
+          setResults([]);
+        }
       } finally {
-        setIsLoading(false);
+        if (searchRequestId.current === requestId) {
+          setIsLoading(false);
+        }
       }
     }, 350);
 
@@ -685,6 +745,9 @@ const styles = StyleSheet.create({
   statusPillActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+  },
+  statusPillDisabled: {
+    opacity: 0.55,
   },
   statusText: {
     color: colors.muted,
