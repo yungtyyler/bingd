@@ -1,13 +1,52 @@
 import { useAuth } from "@clerk/expo";
+import Constants from "expo-constants";
 import { useMemo, useRef } from "react";
+import { Platform } from "react-native";
 
 const fallbackApiBaseUrl = "https://getbingd.com";
+const localHostnames = new Set(["localhost", "127.0.0.1", "::1"]);
+
+function getExpoHostName() {
+  const hostUri = Constants.expoConfig?.hostUri;
+
+  if (!hostUri) return null;
+
+  const hostWithPort = hostUri.replace(/^[a-z]+:\/\//i, "").split("/")[0];
+  return hostWithPort.split(":")[0] || null;
+}
+
+function resolveLocalApiBaseUrl(apiBaseUrl: string) {
+  try {
+    const url = new URL(apiBaseUrl);
+
+    if (!localHostnames.has(url.hostname)) {
+      return apiBaseUrl;
+    }
+
+    if (Platform.OS === "android") {
+      url.hostname = "10.0.2.2";
+      return url.toString().replace(/\/$/, "");
+    }
+
+    const expoHostName = getExpoHostName();
+
+    if (expoHostName && !localHostnames.has(expoHostName)) {
+      url.hostname = expoHostName;
+      return url.toString().replace(/\/$/, "");
+    }
+
+    return apiBaseUrl;
+  } catch {
+    return apiBaseUrl;
+  }
+}
 
 export function getApiBaseUrl() {
-  return (
+  const configuredApiBaseUrl =
     process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    fallbackApiBaseUrl
-  );
+    fallbackApiBaseUrl;
+
+  return resolveLocalApiBaseUrl(configuredApiBaseUrl);
 }
 
 export function useBingdApi() {
@@ -21,15 +60,22 @@ export function useBingdApi() {
       options: RequestInit = {},
     ): Promise<T> {
       const token = await getTokenRef.current();
-      const response = await fetch(`${getApiBaseUrl()}${path}`, {
-        ...options,
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...options.headers,
-        },
-      });
+      const apiBaseUrl = getApiBaseUrl();
+      let response: Response;
+
+      try {
+        response = await fetch(`${apiBaseUrl}${path}`, {
+          ...options,
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...options.headers,
+          },
+        });
+      } catch {
+        throw new Error(`Could not connect to ${apiBaseUrl}.`);
+      }
 
       const data = (await response.json().catch(() => null)) as
         | { error?: string }

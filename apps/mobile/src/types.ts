@@ -32,3 +32,32 @@ export type SearchShow = {
   imageUrl: string | null;
   status?: WatchStatus;
 };
+
+export type SearchUser = {
+  id: string;
+  username: string;
+  firstName: string | null;
+  lastName: string | null;
+  profileImageUrl: string | null;
+  isCurrentUser: boolean;
+  isFollowing: boolean;
+};
+
+export type FriendActivity = {
+  id: string;
+  status: WatchStatus;
+  updatedAt: string;
+  user: {
+    id: string;
+    username: string;
+    firstName: string | null;
+    lastName: string | null;
+    profileImageUrl: string | null;
+  } | null;
+  show: {
+    tvmazeId: number;
+    name: string;
+    imageUrl: string | null;
+    network: string | null;
+  } | null;
+};

@@ -8,6 +8,7 @@ import {
   FlatList,
   Image,
   Linking,
+  Modal,
   Pressable,
   RefreshControl,
   SafeAreaView,
@@ -15,17 +16,26 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { getApiBaseUrl, useBingdApi } from "./api";
 import { colors, spacing } from "./theme";
-import type { LibraryEntry, MobileUser, SearchShow, WatchStatus } from "./types";
+import type {
+  FriendActivity,
+  LibraryEntry,
+  MobileUser,
+  SearchShow,
+  SearchUser,
+  WatchStatus,
+} from "./types";
 
-type TabKey = "dashboard" | "library" | "search" | "settings";
+type TabKey = "dashboard" | "library" | "friends" | "search" | "settings";
 
 const tabs: { key: TabKey; label: string }[] = [
   { key: "dashboard", label: "Home" },
   { key: "library", label: "Library" },
+  { key: "friends", label: "Friends" },
   { key: "search", label: "Search" },
   { key: "settings", label: "Settings" },
 ];
@@ -37,6 +47,22 @@ const statusOptions: WatchStatus[] = [
   "DROPPED",
 ];
 
+const gridGap = 12;
+
+const statusLabels: Record<WatchStatus, string> = {
+  PLANNED: "Planned",
+  WATCHING: "Watching",
+  COMPLETED: "Completed",
+  DROPPED: "Dropped",
+};
+
+const activityLabels: Record<WatchStatus, string> = {
+  PLANNED: "wants to watch",
+  WATCHING: "is watching",
+  COMPLETED: "finished",
+  DROPPED: "dropped",
+};
+
 function formatDate(value: string | null) {
   if (!value) return "Soon";
 
@@ -46,19 +72,43 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
+function formatPersonName(user: {
+  username: string;
+  firstName: string | null;
+  lastName: string | null;
+}) {
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+  return fullName || `@${user.username}`;
+}
+
+function getErrorMessage(caughtError: unknown, fallback: string) {
+  return caughtError instanceof Error ? caughtError.message : fallback;
+}
+
 function Card({
   entry,
   onStatusChange,
   isUpdating = false,
+  cardWidth,
 }: {
   entry: LibraryEntry;
   onStatusChange?: (showId: string, status: WatchStatus) => void;
   isUpdating?: boolean;
+  cardWidth?: number;
 }) {
+  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
+
   if (!entry.show) return null;
 
+  const selectStatus = (status: WatchStatus) => {
+    setIsStatusMenuOpen(false);
+    if (status !== entry.status) {
+      onStatusChange?.(entry.showId, status);
+    }
+  };
+
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, cardWidth ? { width: cardWidth } : null]}>
       <View style={styles.posterWrap}>
         {entry.show.imageUrl ? (
           <Image
@@ -83,29 +133,63 @@ function Card({
         <Text style={styles.cardMeta}>{entry.show.network || entry.show.status}</Text>
       )}
       {onStatusChange ? (
-        <View style={styles.statusRow}>
-          {statusOptions.map((status) => (
+        <>
+          <Pressable
+            disabled={isUpdating}
+            onPress={() => setIsStatusMenuOpen(true)}
+            style={[styles.statusSelect, isUpdating && styles.disabledButton]}
+            accessibilityRole="button"
+            accessibilityLabel={`Change status. Current status is ${statusLabels[entry.status]}.`}
+          >
+            <Text style={styles.statusSelectLabel}>
+              {isUpdating ? "Saving..." : statusLabels[entry.status]}
+            </Text>
+            <Text style={styles.statusSelectChevron}>v</Text>
+          </Pressable>
+          <Modal
+            visible={isStatusMenuOpen}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setIsStatusMenuOpen(false)}
+          >
             <Pressable
-              key={status}
-              disabled={isUpdating}
-              onPress={() => onStatusChange(entry.showId, status)}
-              style={[
-                styles.statusPill,
-                entry.status === status && styles.statusPillActive,
-                isUpdating && styles.statusPillDisabled,
-              ]}
+              style={styles.statusOverlay}
+              onPress={() => setIsStatusMenuOpen(false)}
             >
-              <Text
-                style={[
-                  styles.statusText,
-                  entry.status === status && styles.statusTextActive,
-                ]}
+              <View
+                style={styles.statusMenu}
+                onStartShouldSetResponder={() => true}
               >
-                {status.slice(0, 1)}
-              </Text>
+                <Text numberOfLines={1} style={styles.statusMenuTitle}>
+                  {entry.show.name}
+                </Text>
+                {statusOptions.map((status) => (
+                  <Pressable
+                    key={status}
+                    onPress={() => selectStatus(status)}
+                    style={[
+                      styles.statusOption,
+                      entry.status === status && styles.statusOptionActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.statusOptionText,
+                        entry.status === status &&
+                          styles.statusOptionTextActive,
+                      ]}
+                    >
+                      {statusLabels[status]}
+                    </Text>
+                    {entry.status === status ? (
+                      <Text style={styles.statusSelectedText}>Selected</Text>
+                    ) : null}
+                  </Pressable>
+                ))}
+              </View>
             </Pressable>
-          ))}
-        </View>
+          </Modal>
+        </>
       ) : null}
     </View>
   );
@@ -122,6 +206,35 @@ function ScreenHeader({
     <View style={styles.headerBlock}>
       <Text style={styles.screenTitle}>{title}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+    </View>
+  );
+}
+
+function Avatar({
+  imageUrl,
+  label,
+  size = 44,
+}: {
+  imageUrl: string | null;
+  label: string;
+  size?: number;
+}) {
+  return (
+    <View
+      style={[
+        styles.avatar,
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+        },
+      ]}
+    >
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} style={styles.avatarImage} alt={label} />
+      ) : (
+        <Text style={styles.avatarText}>{label.slice(0, 1).toUpperCase()}</Text>
+      )}
     </View>
   );
 }
@@ -194,18 +307,31 @@ function UsernameGate({
 
 function DashboardScreen() {
   const api = useBingdApi();
+  const { width } = useWindowDimensions();
   const [activeShows, setActiveShows] = useState<LibraryEntry[]>([]);
   const [upcomingShows, setUpcomingShows] = useState<LibraryEntry[]>([]);
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const gridCardWidth = useMemo(
+    () => Math.floor((width - spacing.pageX * 2 - gridGap) / 2),
+    [width],
+  );
 
   const load = useCallback(async () => {
-    const result = await api.request<{
-      activeShows: LibraryEntry[];
-      upcomingShows: LibraryEntry[];
-    }>("/api/mobile/dashboard");
-    setActiveShows(result.activeShows);
-    setUpcomingShows(result.upcomingShows);
+    try {
+      setError("");
+      const result = await api.request<{
+        activeShows: LibraryEntry[];
+        upcomingShows: LibraryEntry[];
+      }>("/api/mobile/dashboard");
+      setActiveShows(result.activeShows);
+      setUpcomingShows(result.upcomingShows);
+    } catch (caughtError) {
+      setActiveShows([]);
+      setUpcomingShows([]);
+      setError(getErrorMessage(caughtError, "Could not load your home screen."));
+    }
   }, [api]);
 
   useEffect(() => {
@@ -234,7 +360,15 @@ function DashboardScreen() {
       }
     >
       <ScreenHeader title="Home" subtitle="Tonight, this week, and what is next." />
-      {upcomingShows.length > 0 ? (
+      {error ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.subtitle}>{error}</Text>
+          <Pressable onPress={load} style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Try again</Text>
+          </Pressable>
+        </View>
+      ) : null}
+      {!error && upcomingShows.length > 0 ? (
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Upcoming</Text>
           <FlatList
@@ -247,36 +381,50 @@ function DashboardScreen() {
           />
         </View>
       ) : null}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Continue Watching</Text>
-        {activeShows.length > 0 ? (
-          <View style={styles.grid}>
-            {activeShows.map((entry) => (
-              <Card key={entry.id} entry={entry} />
-            ))}
-          </View>
-        ) : (
-          <EmptyState text="Add a show and mark it watching to build your home screen." />
-        )}
-      </View>
+      {!error ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Continue Watching</Text>
+          {activeShows.length > 0 ? (
+            <View style={styles.grid}>
+              {activeShows.map((entry) => (
+                <Card key={entry.id} entry={entry} cardWidth={gridCardWidth} />
+              ))}
+            </View>
+          ) : (
+            <EmptyState text="Add a show and mark it watching to build your home screen." />
+          )}
+        </View>
+      ) : null}
     </ScrollView>
   );
 }
 
 function LibraryScreen() {
   const api = useBingdApi();
+  const { width } = useWindowDimensions();
   const [entries, setEntries] = useState<LibraryEntry[]>([]);
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const updatingShowIdsRef = useRef<Set<string>>(new Set());
   const [updatingShowIds, setUpdatingShowIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const gridCardWidth = useMemo(
+    () => Math.floor((width - spacing.pageX * 2 - gridGap) / 2),
+    [width],
+  );
 
   const load = useCallback(async () => {
-    const result = await api.request<{ entries: LibraryEntry[] }>(
-      "/api/mobile/library",
-    );
-    setEntries(result.entries);
+    try {
+      setError("");
+      const result = await api.request<{ entries: LibraryEntry[] }>(
+        "/api/mobile/library",
+      );
+      setEntries(result.entries);
+    } catch (caughtError) {
+      setEntries([]);
+      setError(getErrorMessage(caughtError, "Could not load your library."));
+    }
   }, [api]);
 
   useEffect(() => {
@@ -341,12 +489,20 @@ function LibraryScreen() {
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <ScreenHeader title="Library" subtitle={`${entries.length} tracked shows`} />
-      {entries.length > 0 ? (
+      {error ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.subtitle}>{error}</Text>
+          <Pressable onPress={load} style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Try again</Text>
+          </Pressable>
+        </View>
+      ) : entries.length > 0 ? (
         <View style={styles.grid}>
           {entries.map((entry) => (
             <Card
               key={entry.id}
               entry={entry}
+              cardWidth={gridCardWidth}
               isUpdating={updatingShowIds.has(entry.showId)}
               onStatusChange={updateStatus}
             />
@@ -359,10 +515,147 @@ function LibraryScreen() {
   );
 }
 
-function SearchScreen({ onAdded }: { onAdded: () => void }) {
+function FriendsScreen({ onFindFriends }: { onFindFriends: () => void }) {
+  const api = useBingdApi();
+  const [activities, setActivities] = useState<FriendActivity[]>([]);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      setError("");
+      const result = await api.request<{
+        followingCount: number;
+        activities: FriendActivity[];
+      }>("/api/mobile/friends");
+      setFollowingCount(result.followingCount);
+      setActivities(result.activities);
+    } catch (caughtError) {
+      setFollowingCount(0);
+      setActivities([]);
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Could not load friend activity.",
+      );
+    }
+  }, [api]);
+
+  useEffect(() => {
+    const hydrate = async () => {
+      await load();
+      setIsLoading(false);
+    };
+
+    void hydrate();
+  }, [load]);
+
+  const refresh = async () => {
+    setIsRefreshing(true);
+    await load().finally(() => setIsRefreshing(false));
+  };
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  return (
+    <ScrollView
+      contentContainerStyle={styles.scrollContent}
+      refreshControl={
+        <RefreshControl refreshing={isRefreshing} onRefresh={refresh} />
+      }
+    >
+      <ScreenHeader
+        title="Friends"
+        subtitle="See what the people you follow are watching."
+      />
+      {error ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.subtitle}>{error}</Text>
+          <Pressable onPress={refresh} style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Try again</Text>
+          </Pressable>
+        </View>
+      ) : followingCount === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.subtitle}>Follow friends to build your feed.</Text>
+          <Pressable onPress={onFindFriends} style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Find friends</Text>
+          </Pressable>
+        </View>
+      ) : activities.length === 0 ? (
+        <EmptyState text="No recent activity from your friends yet." />
+      ) : (
+        <View style={styles.activityList}>
+          {activities.map((activity) => {
+            if (!activity.user || !activity.show) return null;
+
+            const personName = formatPersonName(activity.user);
+            const action = activityLabels[activity.status];
+
+            return (
+              <View key={activity.id} style={styles.activityRow}>
+                <Avatar
+                  imageUrl={activity.user.profileImageUrl}
+                  label={personName}
+                />
+                <View style={styles.activityBody}>
+                  <Text style={styles.activityText}>
+                    <Text style={styles.activityName}>{personName}</Text>{" "}
+                    <Text>{action}</Text>
+                  </Text>
+                  <View style={styles.activityShow}>
+                    {activity.show.imageUrl ? (
+                      <Image
+                        source={{ uri: activity.show.imageUrl }}
+                        style={styles.activityPoster}
+                        alt={activity.show.name}
+                      />
+                    ) : (
+                      <View style={styles.activityPoster} />
+                    )}
+                    <View style={styles.activityShowText}>
+                      <Text numberOfLines={2} style={styles.resultTitle}>
+                        {activity.show.name}
+                      </Text>
+                      {activity.show.network ? (
+                        <Text style={styles.cardMeta}>
+                          {activity.show.network}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                  <Text style={styles.activityDate}>
+                    {formatDate(activity.updatedAt)}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </ScrollView>
+  );
+}
+
+function SearchScreen({
+  onAdded,
+  onFollowChange,
+}: {
+  onAdded: () => void;
+  onFollowChange: () => void;
+}) {
   const api = useBingdApi();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchShow[]>([]);
+  const [users, setUsers] = useState<SearchUser[]>([]);
+  const updatingUserIdsRef = useRef<Set<string>>(new Set());
+  const [updatingUserIds, setUpdatingUserIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [isLoading, setIsLoading] = useState(false);
   const searchRequestId = useRef(0);
 
@@ -374,21 +667,27 @@ function SearchScreen({ onAdded }: { onAdded: () => void }) {
 
       if (trimmed.length < 2) {
         setResults([]);
+        setUsers([]);
         setIsLoading(false);
         return;
       }
 
       setIsLoading(true);
       try {
-        const response = await api.request<{ shows: SearchShow[] }>(
+        const response = await api.request<{
+          shows: SearchShow[];
+          users: SearchUser[];
+        }>(
           `/api/mobile/search?q=${encodeURIComponent(trimmed)}`,
         );
         if (searchRequestId.current === requestId) {
           setResults(response.shows);
+          setUsers(response.users);
         }
       } catch {
         if (searchRequestId.current === requestId) {
           setResults([]);
+          setUsers([]);
         }
       } finally {
         if (searchRequestId.current === requestId) {
@@ -401,30 +700,138 @@ function SearchScreen({ onAdded }: { onAdded: () => void }) {
   }, [api, query]);
 
   const addShow = async (show: SearchShow) => {
-    await api.request("/api/mobile/library", {
-      method: "POST",
-      body: JSON.stringify(show),
+    try {
+      await api.request("/api/mobile/library", {
+        method: "POST",
+        body: JSON.stringify(show),
+      });
+      setResults((current) =>
+        current.map((item) =>
+          item.tvmazeId === show.tvmazeId
+            ? { ...item, status: "PLANNED" }
+            : item,
+        ),
+      );
+      onAdded();
+    } catch (caughtError) {
+      Alert.alert(
+        "Could not add show",
+        getErrorMessage(caughtError, "Please try again."),
+      );
+    }
+  };
+
+  const toggleFollow = async (user: SearchUser) => {
+    if (user.isCurrentUser || updatingUserIdsRef.current.has(user.id)) return;
+
+    const nextIsFollowing = !user.isFollowing;
+
+    updatingUserIdsRef.current.add(user.id);
+    setUpdatingUserIds((current) => {
+      const next = new Set(current);
+      next.add(user.id);
+      return next;
     });
-    setResults((current) =>
+    setUsers((current) =>
       current.map((item) =>
-        item.tvmazeId === show.tvmazeId ? { ...item, status: "PLANNED" } : item,
+        item.id === user.id ? { ...item, isFollowing: nextIsFollowing } : item,
       ),
     );
-    onAdded();
+
+    try {
+      await api.request(`/api/mobile/follows/${user.id}`, {
+        method: nextIsFollowing ? "POST" : "DELETE",
+      });
+      onFollowChange();
+    } catch (caughtError) {
+      setUsers((current) =>
+        current.map((item) =>
+          item.id === user.id ? { ...item, isFollowing: user.isFollowing } : item,
+        ),
+      );
+      Alert.alert(
+        "Could not update follow",
+        caughtError instanceof Error ? caughtError.message : "Please try again.",
+      );
+    } finally {
+      updatingUserIdsRef.current.delete(user.id);
+      setUpdatingUserIds((current) => {
+        const next = new Set(current);
+        next.delete(user.id);
+        return next;
+      });
+    }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
-      <ScreenHeader title="Search" subtitle="Find shows and add them to your list." />
+      <ScreenHeader
+        title="Search"
+        subtitle="Find shows to watch and friends to follow."
+      />
       <TextInput
         value={query}
         onChangeText={setQuery}
-        placeholder="Search TV shows"
+        placeholder="Search shows or friends"
         placeholderTextColor={colors.faint}
         style={styles.input}
         autoCapitalize="none"
       />
       {isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+      {users.length > 0 ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>People</Text>
+          <View style={styles.resultList}>
+            {users.map((user) => {
+              const personName = formatPersonName(user);
+              const isUpdating = updatingUserIds.has(user.id);
+
+              return (
+                <View key={user.id} style={styles.personRow}>
+                  <Avatar
+                    imageUrl={user.profileImageUrl}
+                    label={personName}
+                    size={46}
+                  />
+                  <View style={styles.resultText}>
+                    <Text numberOfLines={1} style={styles.resultTitle}>
+                      {personName}
+                    </Text>
+                    <Text style={styles.cardMeta}>@{user.username}</Text>
+                  </View>
+                  <Pressable
+                    disabled={user.isCurrentUser || isUpdating}
+                    onPress={() => toggleFollow(user)}
+                    style={[
+                      styles.smallButton,
+                      user.isFollowing && styles.followingButton,
+                      (user.isCurrentUser || isUpdating) && styles.disabledButton,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.smallButtonText,
+                        user.isFollowing && styles.followingButtonText,
+                      ]}
+                    >
+                      {user.isCurrentUser
+                        ? "You"
+                        : isUpdating
+                          ? "Saving"
+                          : user.isFollowing
+                            ? "Following"
+                            : "Follow"}
+                    </Text>
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
+      {results.length > 0 ? (
+        <Text style={styles.sectionLabel}>Shows</Text>
+      ) : null}
       <View style={styles.resultList}>
         {results.map((show) => (
           <View key={show.tvmazeId} style={styles.resultRow}>
@@ -569,31 +976,69 @@ export default function AppShell() {
   const api = useBingdApi();
   const [tab, setTab] = useState<TabKey>("dashboard");
   const [user, setUser] = useState<MobileUser | null>(null);
+  const [startupError, setStartupError] = useState("");
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [libraryRefreshKey, setLibraryRefreshKey] = useState(0);
+  const [friendsRefreshKey, setFriendsRefreshKey] = useState(0);
+
+  const loadCurrentUser = useCallback(async () => {
+    setIsLoadingUser(true);
+    setStartupError("");
+    try {
+      const result = await api.request<{ user: MobileUser }>("/api/mobile/me");
+      setUser(result.user);
+    } catch (caughtError) {
+      setUser(null);
+      setStartupError(getErrorMessage(caughtError, "Could not load your account."));
+    } finally {
+      setIsLoadingUser(false);
+    }
+  }, [api]);
 
   useEffect(() => {
-    api
-      .request<{ user: MobileUser }>("/api/mobile/me")
-      .then((result) => setUser(result.user))
-      .finally(() => setIsLoadingUser(false));
-  }, [api]);
+    void loadCurrentUser();
+  }, [loadCurrentUser]);
 
   const content = useMemo(() => {
     if (tab === "dashboard") return <DashboardScreen />;
     if (tab === "library") return <LibraryScreen key={libraryRefreshKey} />;
+    if (tab === "friends") {
+      return (
+        <FriendsScreen
+          key={friendsRefreshKey}
+          onFindFriends={() => setTab("search")}
+        />
+      );
+    }
     if (tab === "search") {
       return (
         <SearchScreen
           onAdded={() => setLibraryRefreshKey((current) => current + 1)}
+          onFollowChange={() => setFriendsRefreshKey((current) => current + 1)}
         />
       );
     }
     if (user) return <SettingsScreen user={user} />;
     return null;
-  }, [libraryRefreshKey, tab, user]);
+  }, [friendsRefreshKey, libraryRefreshKey, tab, user]);
 
   if (isLoadingUser || !user) {
+    if (startupError) {
+      return (
+        <SafeAreaView style={styles.safe}>
+          <View style={styles.productOnlyScreen}>
+            <Text style={styles.brand}>bingd.</Text>
+            <View style={styles.emptyState}>
+              <Text style={styles.subtitle}>{startupError}</Text>
+              <Pressable onPress={loadCurrentUser} style={styles.secondaryButton}>
+                <Text style={styles.secondaryButtonText}>Try again</Text>
+              </Pressable>
+            </View>
+          </View>
+        </SafeAreaView>
+      );
+    }
+
     return <LoadingState />;
   }
 
@@ -718,6 +1163,23 @@ const styles = StyleSheet.create({
     color: colors.faint,
     fontSize: 12,
   },
+  avatar: {
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.cardSoft,
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+  },
+  avatarText: {
+    color: colors.primary,
+    fontSize: 15,
+    fontWeight: "900",
+  },
   cardTitle: {
     color: colors.text,
     fontSize: 15,
@@ -728,34 +1190,76 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 12,
   },
-  statusRow: {
+  statusSelect: {
+    minHeight: 34,
+    paddingHorizontal: 10,
     flexDirection: "row",
-    gap: 6,
-    paddingTop: 2,
-  },
-  statusPill: {
-    width: 26,
-    height: 26,
     alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 13,
+    justifyContent: "space-between",
+    gap: 8,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.borderStrong,
+    backgroundColor: colors.cardSoft,
   },
-  statusPillActive: {
+  statusSelectLabel: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  statusSelectChevron: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  statusOverlay: {
+    flex: 1,
+    padding: 20,
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.58)",
+  },
+  statusMenu: {
+    gap: 8,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  statusMenuTitle: {
+    marginBottom: 4,
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  statusOption: {
+    minHeight: 48,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.cardSoft,
+  },
+  statusOptionActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
-  statusPillDisabled: {
-    opacity: 0.55,
+  statusOptionText: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "800",
   },
-  statusText: {
-    color: colors.muted,
-    fontSize: 11,
-    fontWeight: "900",
-  },
-  statusTextActive: {
+  statusOptionTextActive: {
     color: colors.black,
+  },
+  statusSelectedText: {
+    color: colors.black,
+    fontSize: 12,
+    fontWeight: "900",
   },
   panel: {
     gap: 14,
@@ -798,6 +1302,67 @@ const styles = StyleSheet.create({
   resultList: {
     gap: 12,
   },
+  activityList: {
+    gap: 14,
+  },
+  activityRow: {
+    flexDirection: "row",
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  activityBody: {
+    flex: 1,
+    gap: 10,
+  },
+  activityText: {
+    color: colors.muted,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  activityName: {
+    color: colors.text,
+    fontWeight: "900",
+  },
+  activityShow: {
+    flexDirection: "row",
+    gap: 12,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.base,
+  },
+  activityPoster: {
+    width: 46,
+    height: 66,
+    borderRadius: 6,
+    backgroundColor: colors.black,
+  },
+  activityShowText: {
+    flex: 1,
+    justifyContent: "center",
+    gap: 4,
+  },
+  activityDate: {
+    color: colors.faint,
+    fontSize: 11,
+    fontWeight: "800",
+    textTransform: "uppercase",
+  },
+  personRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
   resultRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -834,6 +1399,29 @@ const styles = StyleSheet.create({
   smallButtonText: {
     color: colors.black,
     fontSize: 13,
+    fontWeight: "900",
+  },
+  followingButton: {
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.cardSoft,
+  },
+  followingButtonText: {
+    color: colors.text,
+  },
+  secondaryButton: {
+    minHeight: 42,
+    paddingHorizontal: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.cardSoft,
+  },
+  secondaryButtonText: {
+    color: colors.text,
+    fontSize: 14,
     fontWeight: "900",
   },
   linkButton: {
