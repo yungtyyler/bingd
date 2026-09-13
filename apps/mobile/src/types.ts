@@ -26,6 +26,22 @@ export type LibraryEntry = {
   } | null;
 };
 
+export type ShowDetail = {
+  tvmazeId: number;
+  name: string;
+  summary: string;
+  imageUrl: string | null;
+  status: string | null;
+  network: string | null;
+  premiered: string | null;
+  genres: string[];
+  nextEpisodeDate: string | null;
+  nextEpisodeName: string | null;
+  nextEpisodeSeason: number | null;
+  nextEpisodeNumber: number | null;
+  libraryEntry: LibraryEntry | null;
+};
+
 export type SearchShow = {
   tvmazeId: number;
   name: string;
@@ -60,4 +76,17 @@ export type FriendActivity = {
     imageUrl: string | null;
     network: string | null;
   } | null;
+};
+
+export type ProfileDetail = {
+  user: MobileUser & {
+    isCurrentUser: boolean;
+    isFollowing: boolean;
+    counts: {
+      shows: number;
+      followers: number;
+      following: number;
+    };
+  };
+  entries: LibraryEntry[];
 };

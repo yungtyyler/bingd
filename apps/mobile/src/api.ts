@@ -91,9 +91,11 @@ export function useBingdApi() {
             ? data.error
             : "Request failed.";
 
-        throw new Error(
-          errorMessage,
-        );
+        const devDetails = __DEV__
+          ? ` (${response.status} from ${apiBaseUrl}${path})`
+          : "";
+
+        throw new Error(`${errorMessage}${devDetails}`);
       }
 
       return data as T;

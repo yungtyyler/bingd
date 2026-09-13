@@ -25,12 +25,17 @@ import type {
   FriendActivity,
   LibraryEntry,
   MobileUser,
+  ProfileDetail,
   SearchShow,
   SearchUser,
+  ShowDetail,
   WatchStatus,
 } from "./types";
 
 type TabKey = "dashboard" | "library" | "friends" | "search" | "settings";
+type DetailView =
+  | { type: "show"; tvmazeId: number }
+  | { type: "profile"; username: string };
 
 const tabs: { key: TabKey; label: string }[] = [
   { key: "dashboard", label: "Home" },
@@ -72,6 +77,16 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
+function formatYear(value: string | null) {
+  if (!value) return null;
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date.getFullYear().toString();
+}
+
 function formatPersonName(user: {
   username: string;
   firstName: string | null;
@@ -88,11 +103,13 @@ function getErrorMessage(caughtError: unknown, fallback: string) {
 function Card({
   entry,
   onStatusChange,
+  onShowPress,
   isUpdating = false,
   cardWidth,
 }: {
   entry: LibraryEntry;
   onStatusChange?: (showId: string, status: WatchStatus) => void;
+  onShowPress?: (tvmazeId: number) => void;
   isUpdating?: boolean;
   cardWidth?: number;
 }) {
@@ -109,29 +126,41 @@ function Card({
 
   return (
     <View style={[styles.card, cardWidth ? { width: cardWidth } : null]}>
-      <View style={styles.posterWrap}>
-        {entry.show.imageUrl ? (
-          <Image
-            source={{ uri: entry.show.imageUrl }}
-            style={styles.poster}
-            alt={entry.show.name}
-          />
-        ) : (
-          <View style={styles.emptyPoster}>
-            <Text style={styles.mutedSmall}>No image</Text>
-          </View>
-        )}
-      </View>
-      <Text numberOfLines={2} style={styles.cardTitle}>
-        {entry.show.name}
-      </Text>
-      {entry.show.nextEpisodeDate ? (
-        <Text style={styles.cardMeta}>
-          Next: {formatDate(entry.show.nextEpisodeDate)}
+      <Pressable
+        disabled={!onShowPress}
+        onPress={() => onShowPress?.(entry.show!.tvmazeId)}
+        style={styles.cardPressArea}
+        accessibilityRole={onShowPress ? "button" : undefined}
+        accessibilityLabel={
+          onShowPress ? `Open details for ${entry.show.name}` : undefined
+        }
+      >
+        <View style={styles.posterWrap}>
+          {entry.show.imageUrl ? (
+            <Image
+              source={{ uri: entry.show.imageUrl }}
+              style={styles.poster}
+              alt={entry.show.name}
+            />
+          ) : (
+            <View style={styles.emptyPoster}>
+              <Text style={styles.mutedSmall}>No image</Text>
+            </View>
+          )}
+        </View>
+        <Text numberOfLines={2} style={styles.cardTitle}>
+          {entry.show.name}
         </Text>
-      ) : (
-        <Text style={styles.cardMeta}>{entry.show.network || entry.show.status}</Text>
-      )}
+        {entry.show.nextEpisodeDate ? (
+          <Text style={styles.cardMeta}>
+            Next: {formatDate(entry.show.nextEpisodeDate)}
+          </Text>
+        ) : (
+          <Text style={styles.cardMeta}>
+            {entry.show.network || entry.show.status}
+          </Text>
+        )}
+      </Pressable>
       {onStatusChange ? (
         <>
           <Pressable
@@ -239,6 +268,30 @@ function Avatar({
   );
 }
 
+function DetailHeader({
+  title,
+  onBack,
+}: {
+  title: string;
+  onBack: () => void;
+}) {
+  return (
+    <View style={styles.detailHeader}>
+      <Pressable
+        onPress={onBack}
+        style={styles.backButton}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+      >
+        <Text style={styles.backButtonText}>Back</Text>
+      </Pressable>
+      <Text numberOfLines={1} style={styles.detailHeaderTitle}>
+        {title}
+      </Text>
+    </View>
+  );
+}
+
 function UsernameGate({
   user,
   onSaved,
@@ -305,7 +358,11 @@ function UsernameGate({
   );
 }
 
-function DashboardScreen() {
+function DashboardScreen({
+  onShowPress,
+}: {
+  onShowPress: (tvmazeId: number) => void;
+}) {
   const api = useBingdApi();
   const { width } = useWindowDimensions();
   const [activeShows, setActiveShows] = useState<LibraryEntry[]>([]);
@@ -375,7 +432,9 @@ function DashboardScreen() {
             horizontal
             data={upcomingShows}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <Card entry={item} />}
+            renderItem={({ item }) => (
+              <Card entry={item} onShowPress={onShowPress} />
+            )}
             ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
             showsHorizontalScrollIndicator={false}
           />
@@ -387,7 +446,12 @@ function DashboardScreen() {
           {activeShows.length > 0 ? (
             <View style={styles.grid}>
               {activeShows.map((entry) => (
-                <Card key={entry.id} entry={entry} cardWidth={gridCardWidth} />
+                <Card
+                  key={entry.id}
+                  entry={entry}
+                  cardWidth={gridCardWidth}
+                  onShowPress={onShowPress}
+                />
               ))}
             </View>
           ) : (
@@ -399,7 +463,11 @@ function DashboardScreen() {
   );
 }
 
-function LibraryScreen() {
+function LibraryScreen({
+  onShowPress,
+}: {
+  onShowPress: (tvmazeId: number) => void;
+}) {
   const api = useBingdApi();
   const { width } = useWindowDimensions();
   const [entries, setEntries] = useState<LibraryEntry[]>([]);
@@ -505,6 +573,7 @@ function LibraryScreen() {
               cardWidth={gridCardWidth}
               isUpdating={updatingShowIds.has(entry.showId)}
               onStatusChange={updateStatus}
+              onShowPress={onShowPress}
             />
           ))}
         </View>
@@ -515,7 +584,15 @@ function LibraryScreen() {
   );
 }
 
-function FriendsScreen({ onFindFriends }: { onFindFriends: () => void }) {
+function FriendsScreen({
+  onFindFriends,
+  onProfilePress,
+  onShowPress,
+}: {
+  onFindFriends: () => void;
+  onProfilePress: (username: string) => void;
+  onShowPress: (tvmazeId: number) => void;
+}) {
   const api = useBingdApi();
   const [activities, setActivities] = useState<FriendActivity[]>([]);
   const [followingCount, setFollowingCount] = useState(0);
@@ -598,16 +675,32 @@ function FriendsScreen({ onFindFriends }: { onFindFriends: () => void }) {
 
             return (
               <View key={activity.id} style={styles.activityRow}>
-                <Avatar
-                  imageUrl={activity.user.profileImageUrl}
-                  label={personName}
-                />
+                <Pressable
+                  onPress={() => onProfilePress(activity.user!.username)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${personName}'s profile`}
+                >
+                  <Avatar
+                    imageUrl={activity.user.profileImageUrl}
+                    label={personName}
+                  />
+                </Pressable>
                 <View style={styles.activityBody}>
                   <Text style={styles.activityText}>
-                    <Text style={styles.activityName}>{personName}</Text>{" "}
+                    <Text
+                      style={styles.activityName}
+                      onPress={() => onProfilePress(activity.user!.username)}
+                    >
+                      {personName}
+                    </Text>{" "}
                     <Text>{action}</Text>
                   </Text>
-                  <View style={styles.activityShow}>
+                  <Pressable
+                    onPress={() => onShowPress(activity.show!.tvmazeId)}
+                    style={styles.activityShow}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open details for ${activity.show.name}`}
+                  >
                     {activity.show.imageUrl ? (
                       <Image
                         source={{ uri: activity.show.imageUrl }}
@@ -627,7 +720,7 @@ function FriendsScreen({ onFindFriends }: { onFindFriends: () => void }) {
                         </Text>
                       ) : null}
                     </View>
-                  </View>
+                  </Pressable>
                   <Text style={styles.activityDate}>
                     {formatDate(activity.updatedAt)}
                   </Text>
@@ -644,9 +737,13 @@ function FriendsScreen({ onFindFriends }: { onFindFriends: () => void }) {
 function SearchScreen({
   onAdded,
   onFollowChange,
+  onProfilePress,
+  onShowPress,
 }: {
   onAdded: () => void;
   onFollowChange: () => void;
+  onProfilePress: (username: string) => void;
+  onShowPress: (tvmazeId: number) => void;
 }) {
   const api = useBingdApi();
   const [query, setQuery] = useState("");
@@ -788,17 +885,24 @@ function SearchScreen({
 
               return (
                 <View key={user.id} style={styles.personRow}>
-                  <Avatar
-                    imageUrl={user.profileImageUrl}
-                    label={personName}
-                    size={46}
-                  />
-                  <View style={styles.resultText}>
-                    <Text numberOfLines={1} style={styles.resultTitle}>
-                      {personName}
-                    </Text>
-                    <Text style={styles.cardMeta}>@{user.username}</Text>
-                  </View>
+                  <Pressable
+                    onPress={() => onProfilePress(user.username)}
+                    style={styles.rowPressArea}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${personName}'s profile`}
+                  >
+                    <Avatar
+                      imageUrl={user.profileImageUrl}
+                      label={personName}
+                      size={46}
+                    />
+                    <View style={styles.resultText}>
+                      <Text numberOfLines={1} style={styles.resultTitle}>
+                        {personName}
+                      </Text>
+                      <Text style={styles.cardMeta}>@{user.username}</Text>
+                    </View>
+                  </Pressable>
                   <Pressable
                     disabled={user.isCurrentUser || isUpdating}
                     onPress={() => toggleFollow(user)}
@@ -835,23 +939,30 @@ function SearchScreen({
       <View style={styles.resultList}>
         {results.map((show) => (
           <View key={show.tvmazeId} style={styles.resultRow}>
-            {show.imageUrl ? (
-              <Image
-                source={{ uri: show.imageUrl }}
-                style={styles.resultImage}
-                alt={show.name}
-              />
-            ) : (
-              <View style={styles.resultImage} />
-            )}
-            <View style={styles.resultText}>
-              <Text numberOfLines={2} style={styles.resultTitle}>
-                {show.name}
-              </Text>
-              <Text style={styles.cardMeta}>
-                {show.status ? "In library" : "Ready to add"}
-              </Text>
-            </View>
+            <Pressable
+              onPress={() => onShowPress(show.tvmazeId)}
+              style={styles.rowPressArea}
+              accessibilityRole="button"
+              accessibilityLabel={`Open details for ${show.name}`}
+            >
+              {show.imageUrl ? (
+                <Image
+                  source={{ uri: show.imageUrl }}
+                  style={styles.resultImage}
+                  alt={show.name}
+                />
+              ) : (
+                <View style={styles.resultImage} />
+              )}
+              <View style={styles.resultText}>
+                <Text numberOfLines={2} style={styles.resultTitle}>
+                  {show.name}
+                </Text>
+                <Text style={styles.cardMeta}>
+                  {show.status ? "In library" : "Ready to add"}
+                </Text>
+              </View>
+            </Pressable>
             <Pressable
               disabled={!!show.status}
               onPress={() => addShow(show)}
@@ -871,11 +982,566 @@ function SearchScreen({
   );
 }
 
-function SettingsScreen({ user }: { user: MobileUser }) {
+function ShowDetailScreen({
+  tvmazeId,
+  onBack,
+  onLibraryChange,
+}: {
+  tvmazeId: number;
+  onBack: () => void;
+  onLibraryChange: () => void;
+}) {
+  const api = useBingdApi();
+  const [detail, setDetail] = useState<ShowDetail | null>(null);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      setError("");
+      const result = await api.request<{ show: ShowDetail }>(
+        `/api/mobile/shows/${tvmazeId}`,
+      );
+      setDetail(result.show);
+    } catch (caughtError) {
+      setDetail(null);
+      setError(getErrorMessage(caughtError, "Could not load this show."));
+    }
+  }, [api, tvmazeId]);
+
+  useEffect(() => {
+    const hydrate = async () => {
+      setIsLoading(true);
+      await load();
+      setIsLoading(false);
+    };
+
+    void hydrate();
+  }, [load]);
+
+  const addToLibrary = async () => {
+    if (!detail) return;
+
+    setIsSaving(true);
+    try {
+      await api.request("/api/mobile/library", {
+        method: "POST",
+        body: JSON.stringify({
+          tvmazeId: detail.tvmazeId,
+          name: detail.name,
+          imageUrl: detail.imageUrl,
+          status: "PLANNED",
+        }),
+      });
+      await load();
+      onLibraryChange();
+    } catch (caughtError) {
+      Alert.alert(
+        "Could not add show",
+        getErrorMessage(caughtError, "Please try again."),
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const updateStatus = async (status: WatchStatus) => {
+    if (!detail?.libraryEntry || detail.libraryEntry.status === status) {
+      setIsStatusMenuOpen(false);
+      return;
+    }
+
+    const previousDetail = detail;
+    setIsStatusMenuOpen(false);
+    setIsSaving(true);
+    setDetail({
+      ...detail,
+      libraryEntry: { ...detail.libraryEntry, status },
+    });
+
+    try {
+      await api.request(`/api/mobile/library/${detail.libraryEntry.showId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+      onLibraryChange();
+    } catch (caughtError) {
+      setDetail(previousDetail);
+      Alert.alert(
+        "Could not update status",
+        getErrorMessage(caughtError, "Please try again."),
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const removeFromLibrary = async () => {
+    if (!detail?.libraryEntry) return;
+
+    const previousDetail = detail;
+    setIsSaving(true);
+    setDetail({ ...detail, libraryEntry: null });
+
+    try {
+      await api.request(`/api/mobile/library/${detail.libraryEntry.showId}`, {
+        method: "DELETE",
+      });
+      onLibraryChange();
+    } catch (caughtError) {
+      setDetail(previousDetail);
+      Alert.alert(
+        "Could not remove show",
+        getErrorMessage(caughtError, "Please try again."),
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  return (
+    <ScrollView contentContainerStyle={styles.scrollContent}>
+      <DetailHeader title={detail?.name || "Show"} onBack={onBack} />
+      {error || !detail ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.subtitle}>{error || "Show not found."}</Text>
+          <Pressable onPress={load} style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Try again</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <>
+          <View style={styles.detailHero}>
+            <View style={styles.detailPosterWrap}>
+              {detail.imageUrl ? (
+                <Image
+                  source={{ uri: detail.imageUrl }}
+                  style={styles.poster}
+                  alt={detail.name}
+                />
+              ) : (
+                <View style={styles.emptyPoster}>
+                  <Text style={styles.mutedSmall}>No image</Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.detailHeroBody}>
+              <Text style={styles.detailTitle}>{detail.name}</Text>
+              <Text style={styles.cardMeta}>
+                {[detail.network, detail.status, formatYear(detail.premiered)]
+                  .filter(Boolean)
+                  .join(" • ")}
+              </Text>
+              {detail.genres.length > 0 ? (
+                <View style={styles.chipRow}>
+                  {detail.genres.map((genre) => (
+                    <View key={genre} style={styles.chip}>
+                      <Text style={styles.chipText}>{genre}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+            </View>
+          </View>
+
+          <View style={styles.panel}>
+            <Text style={styles.sectionLabel}>About</Text>
+            <Text style={styles.bodyCopy}>
+              {detail.summary || "No description available."}
+            </Text>
+          </View>
+
+          {detail.nextEpisodeDate ? (
+            <View style={styles.panel}>
+              <Text style={styles.sectionLabel}>Next Episode</Text>
+              <Text style={styles.cardTitle}>
+                {detail.nextEpisodeName || "Upcoming episode"}
+              </Text>
+              <Text style={styles.cardMeta}>
+                {[
+                  `Airs ${formatDate(detail.nextEpisodeDate)}`,
+                  detail.nextEpisodeSeason && detail.nextEpisodeNumber
+                    ? `S${detail.nextEpisodeSeason} E${detail.nextEpisodeNumber}`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" • ")}
+              </Text>
+            </View>
+          ) : null}
+
+          <View style={styles.panel}>
+            <Text style={styles.sectionLabel}>Your Library</Text>
+            {detail.libraryEntry ? (
+              <>
+                <Pressable
+                  disabled={isSaving}
+                  onPress={() => setIsStatusMenuOpen(true)}
+                  style={[styles.statusSelect, isSaving && styles.disabledButton]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Change status. Current status is ${
+                    statusLabels[detail.libraryEntry.status]
+                  }.`}
+                >
+                  <Text style={styles.statusSelectLabel}>
+                    {isSaving
+                      ? "Saving..."
+                      : statusLabels[detail.libraryEntry.status]}
+                  </Text>
+                  <Text style={styles.statusSelectChevron}>v</Text>
+                </Pressable>
+                <Pressable
+                  disabled={isSaving}
+                  onPress={removeFromLibrary}
+                  style={[styles.dangerButton, isSaving && styles.disabledButton]}
+                >
+                  <Text style={styles.dangerButtonText}>Remove from library</Text>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable
+                disabled={isSaving}
+                onPress={addToLibrary}
+                style={[styles.primaryButton, isSaving && styles.disabledButton]}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {isSaving ? "Saving..." : "Add to Library"}
+                </Text>
+              </Pressable>
+            )}
+          </View>
+
+          <Modal
+            visible={isStatusMenuOpen}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setIsStatusMenuOpen(false)}
+          >
+            <Pressable
+              style={styles.statusOverlay}
+              onPress={() => setIsStatusMenuOpen(false)}
+            >
+              <View style={styles.statusMenu} onStartShouldSetResponder={() => true}>
+                <Text numberOfLines={1} style={styles.statusMenuTitle}>
+                  {detail.name}
+                </Text>
+                {statusOptions.map((status) => (
+                  <Pressable
+                    key={status}
+                    onPress={() => updateStatus(status)}
+                    style={[
+                      styles.statusOption,
+                      detail.libraryEntry?.status === status &&
+                        styles.statusOptionActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.statusOptionText,
+                        detail.libraryEntry?.status === status &&
+                          styles.statusOptionTextActive,
+                      ]}
+                    >
+                      {statusLabels[status]}
+                    </Text>
+                    {detail.libraryEntry?.status === status ? (
+                      <Text style={styles.statusSelectedText}>Selected</Text>
+                    ) : null}
+                  </Pressable>
+                ))}
+              </View>
+            </Pressable>
+          </Modal>
+        </>
+      )}
+    </ScrollView>
+  );
+}
+
+function ProfileDetailScreen({
+  username,
+  onBack,
+  onShowPress,
+  onFollowChange,
+}: {
+  username: string;
+  onBack: () => void;
+  onShowPress: (tvmazeId: number) => void;
+  onFollowChange: () => void;
+}) {
+  const api = useBingdApi();
+  const { width } = useWindowDimensions();
+  const [detail, setDetail] = useState<ProfileDetail | null>(null);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSavingFollow, setIsSavingFollow] = useState(false);
+  const gridCardWidth = useMemo(
+    () => Math.floor((width - spacing.pageX * 2 - gridGap) / 2),
+    [width],
+  );
+
+  const load = useCallback(async () => {
+    try {
+      setError("");
+      const result = await api.request<ProfileDetail>(
+        `/api/mobile/users/${encodeURIComponent(username)}`,
+      );
+      setDetail(result);
+    } catch (caughtError) {
+      setDetail(null);
+      setError(getErrorMessage(caughtError, "Could not load this profile."));
+    }
+  }, [api, username]);
+
+  useEffect(() => {
+    const hydrate = async () => {
+      setIsLoading(true);
+      await load();
+      setIsLoading(false);
+    };
+
+    void hydrate();
+  }, [load]);
+
+  const toggleFollow = async () => {
+    if (!detail || detail.user.isCurrentUser || isSavingFollow) return;
+
+    const nextIsFollowing = !detail.user.isFollowing;
+    const previousDetail = detail;
+
+    setIsSavingFollow(true);
+    setDetail({
+      ...detail,
+      user: {
+        ...detail.user,
+        isFollowing: nextIsFollowing,
+        counts: {
+          ...detail.user.counts,
+          followers: Math.max(
+            0,
+            detail.user.counts.followers + (nextIsFollowing ? 1 : -1),
+          ),
+        },
+      },
+    });
+
+    try {
+      await api.request(`/api/mobile/follows/${detail.user.id}`, {
+        method: nextIsFollowing ? "POST" : "DELETE",
+      });
+      onFollowChange();
+    } catch (caughtError) {
+      setDetail(previousDetail);
+      Alert.alert(
+        "Could not update follow",
+        getErrorMessage(caughtError, "Please try again."),
+      );
+    } finally {
+      setIsSavingFollow(false);
+    }
+  };
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  const personName = detail ? formatPersonName(detail.user) : username;
+  const watching =
+    detail?.entries.filter((entry) => entry.status === "WATCHING") || [];
+
+  return (
+    <ScrollView contentContainerStyle={styles.scrollContent}>
+      <DetailHeader title={`@${username}`} onBack={onBack} />
+      {error || !detail ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.subtitle}>{error || "Profile not found."}</Text>
+          <Pressable onPress={load} style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Try again</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <>
+          <View style={styles.profileHero}>
+            <Avatar
+              imageUrl={detail.user.profileImageUrl}
+              label={personName}
+              size={88}
+            />
+            <View style={styles.profileHeroBody}>
+              <Text style={styles.detailTitle}>{personName}</Text>
+              <Text style={styles.cardMeta}>@{detail.user.username}</Text>
+              <View style={styles.statsRow}>
+                <View style={styles.stat}>
+                  <Text style={styles.statNumber}>{detail.user.counts.shows}</Text>
+                  <Text style={styles.statLabel}>Shows</Text>
+                </View>
+                <View style={styles.stat}>
+                  <Text style={styles.statNumber}>
+                    {detail.user.counts.followers}
+                  </Text>
+                  <Text style={styles.statLabel}>Followers</Text>
+                </View>
+                <View style={styles.stat}>
+                  <Text style={styles.statNumber}>
+                    {detail.user.counts.following}
+                  </Text>
+                  <Text style={styles.statLabel}>Following</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {detail.user.isCurrentUser ? (
+            <View style={styles.panel}>
+              <Text style={styles.cardMeta}>This is your profile.</Text>
+            </View>
+          ) : (
+            <Pressable
+              disabled={isSavingFollow}
+              onPress={toggleFollow}
+              style={[
+                styles.primaryButton,
+                detail.user.isFollowing && styles.followingButton,
+                isSavingFollow && styles.disabledButton,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.primaryButtonText,
+                  detail.user.isFollowing && styles.followingButtonText,
+                ]}
+              >
+                {isSavingFollow
+                  ? "Saving..."
+                  : detail.user.isFollowing
+                    ? "Following"
+                    : "Follow"}
+              </Text>
+            </Pressable>
+          )}
+
+          {watching.length > 0 ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>Currently Watching</Text>
+              <FlatList
+                horizontal
+                data={watching}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <Card entry={item} onShowPress={onShowPress} />
+                )}
+                ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+                showsHorizontalScrollIndicator={false}
+              />
+            </View>
+          ) : null}
+
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Library</Text>
+            {detail.entries.length > 0 ? (
+              <View style={styles.grid}>
+                {detail.entries.map((entry) => (
+                  <Card
+                    key={entry.id}
+                    entry={entry}
+                    cardWidth={gridCardWidth}
+                    onShowPress={onShowPress}
+                  />
+                ))}
+              </View>
+            ) : (
+              <EmptyState text="No shows in this library yet." />
+            )}
+          </View>
+        </>
+      )}
+    </ScrollView>
+  );
+}
+
+function SettingsScreen({
+  user,
+  onUserChange,
+}: {
+  user: MobileUser;
+  onUserChange: (user: MobileUser) => void;
+}) {
   const api = useBingdApi();
   const { signOut } = useAuth();
   const { user: clerkUser } = useUser();
+  const [username, setUsername] = useState(user.username);
+  const [usernameError, setUsernameError] = useState("");
+  const [usernameMessage, setUsernameMessage] = useState("");
+  const [isSavingUsername, setIsSavingUsername] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  useEffect(() => {
+    setUsername(user.username);
+  }, [user.username]);
+
+  const saveUsername = async () => {
+    setUsernameError("");
+    setUsernameMessage("");
+    setIsSavingUsername(true);
+
+    try {
+      const result = await api.request<{ user: MobileUser }>("/api/mobile/me", {
+        method: "PATCH",
+        body: JSON.stringify({ username }),
+      });
+      onUserChange(result.user);
+      setUsername(result.user.username);
+      setUsernameMessage("Username updated.");
+    } catch (caughtError) {
+      setUsernameError(
+        getErrorMessage(caughtError, "Could not update username."),
+      );
+    } finally {
+      setIsSavingUsername(false);
+    }
+  };
+
+  const deleteAccount = async () => {
+    if (deleteConfirmation !== "DELETE") return;
+
+    Alert.alert(
+      "Delete account?",
+      "This permanently deletes your bingd account, watch library, follows, notification settings, devices, and alert history.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setDeleteError("");
+            setIsDeletingAccount(true);
+
+            try {
+              await api.request("/api/mobile/me", {
+                method: "DELETE",
+                body: JSON.stringify({ confirmation: deleteConfirmation }),
+              });
+              await signOut();
+            } catch (caughtError) {
+              setDeleteError(
+                getErrorMessage(caughtError, "Could not delete your account."),
+              );
+              setIsDeletingAccount(false);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const registerPush = async () => {
     setIsRegistering(true);
@@ -926,6 +1592,50 @@ function SettingsScreen({ user }: { user: MobileUser }) {
         <Text style={styles.cardMeta}>{clerkUser?.primaryEmailAddress?.emailAddress}</Text>
       </View>
       <View style={styles.panel}>
+        <Text style={styles.sectionLabel}>Public Profile</Text>
+        <Text style={styles.subtitle}>
+          Pick the username friends use to find your library.
+        </Text>
+        <TextInput
+          value={username}
+          onChangeText={(value) => {
+            setUsername(value);
+            setUsernameError("");
+            setUsernameMessage("");
+          }}
+          autoCapitalize="none"
+          autoCorrect={false}
+          placeholder="yourname"
+          placeholderTextColor={colors.faint}
+          style={styles.input}
+        />
+        {usernameError ? (
+          <Text style={styles.errorText}>{usernameError}</Text>
+        ) : null}
+        {usernameMessage ? (
+          <Text style={styles.successText}>{usernameMessage}</Text>
+        ) : null}
+        <Pressable
+          disabled={isSavingUsername || username.trim() === user.username}
+          onPress={saveUsername}
+          style={[
+            styles.primaryButton,
+            (isSavingUsername || username.trim() === user.username) &&
+              styles.disabledButton,
+          ]}
+        >
+          <Text style={styles.primaryButtonText}>
+            {isSavingUsername ? "Saving..." : "Save username"}
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => openWeb(`/u/${user.username}`)}
+          style={styles.linkButton}
+        >
+          <Text style={styles.linkText}>View public profile</Text>
+        </Pressable>
+      </View>
+      <View style={styles.panel}>
         <Text style={styles.sectionLabel}>Notifications</Text>
         <Text style={styles.subtitle}>
           Register this phone so bingd can send episode alerts.
@@ -941,12 +1651,51 @@ function SettingsScreen({ user }: { user: MobileUser }) {
         </Pressable>
       </View>
       <View style={styles.panel}>
-        <Text style={styles.sectionLabel}>Legal</Text>
+        <Text style={styles.sectionLabel}>Help & Info</Text>
+        <Pressable onPress={() => openWeb("/about")} style={styles.linkButton}>
+          <Text style={styles.linkText}>About bingd</Text>
+        </Pressable>
+        <Pressable onPress={() => openWeb("/contact")} style={styles.linkButton}>
+          <Text style={styles.linkText}>Contact support</Text>
+        </Pressable>
         <Pressable onPress={() => openWeb("/privacy")} style={styles.linkButton}>
           <Text style={styles.linkText}>Privacy Policy</Text>
         </Pressable>
         <Pressable onPress={() => openWeb("/terms")} style={styles.linkButton}>
           <Text style={styles.linkText}>Terms of Use</Text>
+        </Pressable>
+      </View>
+      <View style={styles.dangerPanel}>
+        <Text style={styles.sectionLabel}>Delete Account</Text>
+        <Text style={styles.subtitle}>
+          Permanently delete your account, watch library, profile, follows,
+          notification settings, devices, and alert history.
+        </Text>
+        <TextInput
+          value={deleteConfirmation}
+          onChangeText={(value) => {
+            setDeleteConfirmation(value);
+            setDeleteError("");
+          }}
+          autoCapitalize="characters"
+          autoCorrect={false}
+          placeholder="Type DELETE"
+          placeholderTextColor={colors.faint}
+          style={styles.input}
+        />
+        {deleteError ? <Text style={styles.errorText}>{deleteError}</Text> : null}
+        <Pressable
+          disabled={isDeletingAccount || deleteConfirmation !== "DELETE"}
+          onPress={deleteAccount}
+          style={[
+            styles.dangerButton,
+            (isDeletingAccount || deleteConfirmation !== "DELETE") &&
+              styles.disabledButton,
+          ]}
+        >
+          <Text style={styles.dangerButtonText}>
+            {isDeletingAccount ? "Deleting..." : "Delete account"}
+          </Text>
         </Pressable>
       </View>
       <Pressable onPress={() => signOut()} style={styles.signOutButton}>
@@ -975,6 +1724,7 @@ function EmptyState({ text }: { text: string }) {
 export default function AppShell() {
   const api = useBingdApi();
   const [tab, setTab] = useState<TabKey>("dashboard");
+  const [detailStack, setDetailStack] = useState<DetailView[]>([]);
   const [user, setUser] = useState<MobileUser | null>(null);
   const [startupError, setStartupError] = useState("");
   const [isLoadingUser, setIsLoadingUser] = useState(true);
@@ -999,14 +1749,60 @@ export default function AppShell() {
     void loadCurrentUser();
   }, [loadCurrentUser]);
 
+  const detailView =
+    detailStack.length > 0 ? detailStack[detailStack.length - 1] : null;
+
+  const openShow = useCallback((tvmazeId: number) => {
+    setDetailStack((current) => [...current, { type: "show", tvmazeId }]);
+  }, []);
+
+  const openProfile = useCallback((username: string) => {
+    setDetailStack((current) => [...current, { type: "profile", username }]);
+  }, []);
+
+  const closeDetail = useCallback(() => {
+    setDetailStack((current) => current.slice(0, -1));
+  }, []);
+
   const content = useMemo(() => {
-    if (tab === "dashboard") return <DashboardScreen />;
-    if (tab === "library") return <LibraryScreen key={libraryRefreshKey} />;
+    if (detailView?.type === "show") {
+      return (
+        <ShowDetailScreen
+          key={`show-${detailView.tvmazeId}`}
+          tvmazeId={detailView.tvmazeId}
+          onBack={closeDetail}
+          onLibraryChange={() =>
+            setLibraryRefreshKey((current) => current + 1)
+          }
+        />
+      );
+    }
+    if (detailView?.type === "profile") {
+      return (
+        <ProfileDetailScreen
+          key={`profile-${detailView.username}`}
+          username={detailView.username}
+          onBack={closeDetail}
+          onShowPress={openShow}
+          onFollowChange={() =>
+            setFriendsRefreshKey((current) => current + 1)
+          }
+        />
+      );
+    }
+    if (tab === "dashboard") return <DashboardScreen onShowPress={openShow} />;
+    if (tab === "library") {
+      return (
+        <LibraryScreen key={libraryRefreshKey} onShowPress={openShow} />
+      );
+    }
     if (tab === "friends") {
       return (
         <FriendsScreen
           key={friendsRefreshKey}
           onFindFriends={() => setTab("search")}
+          onProfilePress={openProfile}
+          onShowPress={openShow}
         />
       );
     }
@@ -1015,12 +1811,23 @@ export default function AppShell() {
         <SearchScreen
           onAdded={() => setLibraryRefreshKey((current) => current + 1)}
           onFollowChange={() => setFriendsRefreshKey((current) => current + 1)}
+          onProfilePress={openProfile}
+          onShowPress={openShow}
         />
       );
     }
-    if (user) return <SettingsScreen user={user} />;
+    if (user) return <SettingsScreen user={user} onUserChange={setUser} />;
     return null;
-  }, [friendsRefreshKey, libraryRefreshKey, tab, user]);
+  }, [
+    closeDetail,
+    detailView,
+    friendsRefreshKey,
+    libraryRefreshKey,
+    openProfile,
+    openShow,
+    tab,
+    user,
+  ]);
 
   if (isLoadingUser || !user) {
     if (startupError) {
@@ -1056,7 +1863,10 @@ export default function AppShell() {
         {tabs.map((item) => (
           <Pressable
             key={item.key}
-            onPress={() => setTab(item.key)}
+            onPress={() => {
+              setDetailStack([]);
+              setTab(item.key);
+            }}
             style={[styles.tab, tab === item.key && styles.tabActive]}
           >
             <Text
@@ -1119,6 +1929,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
+  bodyCopy: {
+    color: colors.muted,
+    fontSize: 15,
+    lineHeight: 23,
+  },
   section: {
     gap: 12,
   },
@@ -1142,6 +1957,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.card,
+  },
+  cardPressArea: {
+    gap: 8,
   },
   posterWrap: {
     width: "100%",
@@ -1269,6 +2087,118 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.card,
   },
+  dangerPanel: {
+    gap: 14,
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(248, 113, 113, 0.42)",
+    backgroundColor: colors.card,
+  },
+  detailHeader: {
+    minHeight: 42,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  backButton: {
+    minHeight: 36,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.cardSoft,
+  },
+  backButtonText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  detailHeaderTitle: {
+    flex: 1,
+    color: colors.faint,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  detailHero: {
+    flexDirection: "row",
+    gap: 16,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  detailPosterWrap: {
+    width: 118,
+    aspectRatio: 2 / 3,
+    borderRadius: 10,
+    overflow: "hidden",
+    backgroundColor: colors.black,
+  },
+  detailHeroBody: {
+    flex: 1,
+    gap: 10,
+    justifyContent: "center",
+  },
+  detailTitle: {
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: "900",
+    lineHeight: 29,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  chip: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.cardSoft,
+  },
+  chipText: {
+    color: colors.text,
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  profileHero: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  profileHeroBody: {
+    flex: 1,
+    gap: 8,
+  },
+  statsRow: {
+    flexDirection: "row",
+    gap: 16,
+    paddingTop: 4,
+  },
+  stat: {
+    gap: 2,
+  },
+  statNumber: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "900",
+  },
+  statLabel: {
+    color: colors.faint,
+    fontSize: 11,
+    fontWeight: "800",
+  },
   input: {
     minHeight: 52,
     paddingHorizontal: 14,
@@ -1291,12 +2221,31 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "900",
   },
+  dangerButton: {
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: colors.danger,
+  },
+  dangerButtonText: {
+    color: colors.danger,
+    fontSize: 14,
+    fontWeight: "900",
+  },
   disabledButton: {
     opacity: 0.55,
   },
   errorText: {
     color: colors.danger,
     fontSize: 13,
+    lineHeight: 18,
+  },
+  successText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: "800",
     lineHeight: 18,
   },
   resultList: {
@@ -1362,6 +2311,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.card,
+  },
+  rowPressArea: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   resultRow: {
     flexDirection: "row",
