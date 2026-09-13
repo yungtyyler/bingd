@@ -32,6 +32,14 @@ const Footer = () => {
           >
             Terms
           </Link>
+          <a
+            href="https://www.tvmaze.com"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-brand-primary transition-colors"
+          >
+            TVmaze
+          </a>
         </div>
       </div>
     </footer>

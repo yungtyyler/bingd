@@ -1664,6 +1664,12 @@ function SettingsScreen({
         <Pressable onPress={() => openWeb("/terms")} style={styles.linkButton}>
           <Text style={styles.linkText}>Terms of Use</Text>
         </Pressable>
+        <Pressable
+          onPress={() => Linking.openURL("https://www.tvmaze.com")}
+          style={styles.linkButton}
+        >
+          <Text style={styles.linkText}>TV metadata provided by TVmaze</Text>
+        </Pressable>
       </View>
       <View style={styles.dangerPanel}>
         <Text style={styles.sectionLabel}>Delete Account</Text>

@@ -37,6 +37,18 @@ const AboutPage = () => {
           It&apos;s built to be blazing fast, visually cinematic, and incredibly
           simple to use. No clutter, just your shows.
         </p>
+        <p className="text-sm text-gray-500">
+          TV show metadata and images are provided by{" "}
+          <a
+            href="https://www.tvmaze.com"
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold text-brand-primary hover:text-brand-primary-hover"
+          >
+            TVmaze
+          </a>
+          .
+        </p>
         <p className="pt-4 font-medium text-white">
           Happy watching, <br />— Tyler
         </p>
